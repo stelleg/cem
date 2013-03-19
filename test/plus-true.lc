@@ -1,0 +1,9 @@
+(\plus. 
+  (\three.
+    (\four.
+      (\iszero.
+        ((iszero ((plus three) four)) ((plus three) four))
+      \n.((n \z.\x.\y.y) \x.\y.x))
+    \f.\x.(f (f (f (f x)))))
+  \f.\x.(f (f (f x))))
+\m.\n.\f.\x.((m f) ((n f) x)))

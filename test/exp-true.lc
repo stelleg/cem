@@ -1,0 +1,12 @@
+(\iszero.
+  (\pred.
+    (\sub.
+      (\seven.
+        (\ten.
+          (iszero ((sub (seven ten)) (seven ten)))
+        \f.\x.(f (f (f (f (f (f (f (f (f x))))))))))
+      \f.\x.(f (f (f (f x)))))
+    \m.\n.((n pred) m))
+  \n.\f.\x.(((n \g.\h.(h (g f))) \u.x) \u.u))
+\n.((n \z.\x.\y.y) \x.\y.x))
+
