@@ -5,13 +5,13 @@
 //Debugging trace functions
 void traceCode(Code* code){
   switch(code->opcode){
-    case OPAPP:
+    case OPPUSH:
       printf("("); traceCode(code+1); printf(" "); traceCode(code->u.m); printf(")");
       break;
-    case OPLAM:
+    case OPTAKE:
       printf("\\"); traceCode(code+1);
       break;
-    case OPVAR: 
+    case OPENTER: 
       printf("%d", code->u.var); 
       break;
   }

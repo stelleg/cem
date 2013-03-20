@@ -6,14 +6,14 @@
 #define jump(ct, opcode) steps++; goto *ct[opcode];
 
 /* Global Variables */
-static unsigned long long stackSize = ((unsigned long long) 2) << 30;
+static unsigned long long stackSize = ((unsigned long long) 2) << 28;
 static unsigned long long envSize = ((unsigned long long) 2) << 32;
 
 Code* runCEM(Code* code){
   long long steps = 0, maxStack = 0, numVarIndir=0, numVarStraight=0, i=0, hotClos=0;
   bool varIndir;
   Environment *env, *freeEnv;
-  static const void *codetable[] = {&&APP, &&LAM, &&VAR};
+  static const void *codetable[] = {&&PUSH, &&TAKE, &&ENTER};
   /// INITIALIZATION ///
   Stack stack = (Stack) { NULL, malloc(stackSize) };
   stack.head = stack.tail - 1;
@@ -25,9 +25,9 @@ Code* runCEM(Code* code){
   
   jump(codetable, clos.code->opcode);
 
-APP:
+PUSH:
   #ifdef TRACE
-  printf("APP: "); trace(clos, stack);
+  printf("PUSH: "); trace(clos, stack);
   #endif
   #ifdef DEBUG
   maxStack = stack.head - stack.tail > maxStack ? stack.head - stack.tail : maxStack;
@@ -51,12 +51,12 @@ DONE:
   #endif
   return clos.code;
 
-LAM: 
+TAKE: 
   if(stack.head < stack.tail) goto DONE;
   if(stack.head->update) goto UPDATE;
   
   #ifdef TRACE
-  printf("LAM: "); trace(clos,stack);
+  printf("TAKE: "); trace(clos,stack);
   #endif 
   
   tmp = clos.env;
@@ -75,9 +75,9 @@ UPDATE:
   (stack.head--)->updLoc->clos = clos;
   jump(codetable,clos.code->opcode);
 
-VAR:
+ENTER:
   #ifdef TRACE
-  printf("VAR: ");trace(clos,stack);
+  printf("ENTER: ");trace(clos,stack);
   #endif
 
   #ifdef DEBUG
@@ -98,7 +98,7 @@ VAR:
 
   //Shortcut, if closure is a value, dont bother pushing update, along with
   //collapsed marker update, both from Improving Lazy Kriving Machine
-  if(clos.env->clos.code->opcode != OPLAM && stack.head[0].update == arg) 
+  if(clos.env->clos.code->opcode != OPTAKE && stack.head[0].update == arg) 
     *(++stack.head) = (StackObject){upd, .updLoc=clos.env};
 
 #ifdef DEBUG

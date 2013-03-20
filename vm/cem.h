@@ -2,9 +2,9 @@
 typedef unsigned char byte;
 typedef byte bool;
 //Opcodes
-#define OPAPP 0
-#define OPLAM 1
-#define OPVAR 2
+#define OPPUSH 0
+#define OPTAKE 1
+#define OPENTER 2
 
 /* Types */
 typedef struct Code {byte opcode; union {struct Code* m; int fVar; int var;} u;} Code;

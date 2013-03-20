@@ -3,10 +3,10 @@
     (\mult.
       (\pred.
         (\sub.
-          (\ten.
+          (\seven.
             (\one.
               (\fact.
-                (iszero ((sub (fact ten)) (fact ten))) 
+                (iszero ((sub (fact seven)) (fact seven))) 
               (Y \fact.\n.(((iszero n) one) ((mult n) (fact (pred n))))))
             \f.\x.(f x))
           \f.\x.(f (f (f (f (f (f (f x))))))))
