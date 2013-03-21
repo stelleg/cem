@@ -6,8 +6,8 @@
 #define jump(ct, opcode) steps++; goto *ct[opcode];
 
 /* Global Variables */
-static unsigned long long stackSize = ((unsigned long long) 2) << 28;
-static unsigned long long envSize = ((unsigned long long) 2) << 32;
+static unsigned long long stackSize = ((unsigned long long) 2) << 26;
+static unsigned long long envSize = ((unsigned long long) 2) << 28;
 
 Code* runCEM(Code* code){
   long long steps = 0, maxStack = 0, numVarIndir=0, numVarStraight=0, i=0, hotClos=0;
@@ -15,9 +15,9 @@ Code* runCEM(Code* code){
   Environment *env, *freeEnv;
   static const void *codetable[] = {&&PUSH, &&TAKE, &&ENTER};
   /// INITIALIZATION ///
-  Stack stack = (Stack) { NULL, malloc(stackSize) };
+  Stack stack = (Stack) { NULL, malloc(stackSize * sizeof(StackObject)) };
   stack.head = stack.tail - 1;
-  env = malloc(envSize); 
+  env = malloc(envSize * sizeof(Environment)); 
   freeEnv = env;
   Closure clos = (Closure) { code, NULL };
   //tmp variables
@@ -40,9 +40,9 @@ PUSH:
   jump(codetable,(++clos.code)->opcode);
 
 DONE: 
+  #ifdef DEBUG
   printf("Result: "); traceCode(clos.code); printf("\n");
   printf("Took %llu steps \n", steps);
-  #ifdef DEBUG
   printf("Hottest closure: %llu\n", hotClos);
   printf("Max stacksize = %llu \n", maxStack);
   printf("Max envsize = %lu \n", freeEnv - env);
@@ -96,10 +96,9 @@ ENTER:
     clos.env = clos.env->next;
   #endif 
 
-  //Shortcut, if closure is a value, dont bother pushing update, along with
-  //collapsed marker update, both from Improving Lazy Kriving Machine
-  if(clos.env->clos.code->opcode != OPTAKE && stack.head[0].update == arg) 
-    *(++stack.head) = (StackObject){upd, .updLoc=clos.env};
+  //Shortcut: If closure is a value, dont bother pushing update, from LKM paper
+  //if(clos.env->clos.code->opcode != OPTAKE) 
+  //  *(++stack.head) = (StackObject){upd, .updLoc=clos.env};
 
 #ifdef DEBUG
   hotClos = ++clos.env->clos.count > hotClos ? clos.env->clos.count : hotClos;
