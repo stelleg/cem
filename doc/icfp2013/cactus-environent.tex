@@ -18,21 +18,21 @@
 \usetikzlibrary{trees,positioning,arrows}
 \begin{document}
 \begin{tikzpicture}[
-	edge from parent path={(\tikzchildnode\tikzchildanchor) edge [-latex] (\tikzparentnode\tikzparentanchor)},
-	level distance=1cm
+  edge from parent path={(\tikzchildnode\tikzchildanchor) edge [-latex] (\tikzparentnode\tikzparentanchor)},
+  level distance=1cm
 ]
-%% Draw events and edges
+
 \node (1) {((f x) g)}
-	child {node (2) {f x}
+    child {node (2) {f x}
     	child {node (5) {f}}
      	child {node (6) {x}}
     }
-   	child {node (3) {g}}
+    child {node (3) {g}}
     ;
 
 \path[update/.style={red, -latex},
- 	  updatelocal/.style={red, -latex, loop left}] 
- 	(1) edge [update] (6)
+      updatelocal/.style={red, -latex, loop left}] 
+    (1) edge [update] (6)
     (3) edge [updatelocal] (3)
     (2) edge [updatelocal] (2)
     (5) edge [updatelocal] (5)

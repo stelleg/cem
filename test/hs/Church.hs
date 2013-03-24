@@ -1,15 +1,19 @@
 {-#Language RankNTypes #-}
 module Church where
 
-newtype Church = Ch (forall a.(a->a)->a->a)
+y f = f (y f)
+
+newtype ChurchInt = Ch (forall a.(a->a)->a->a)
+type ChurchBool a = a -> a -> a
 
 church n = if n==0 then zero else inc $ church (n-1) 
+unchurch (Ch n) = n (\x -> x + 1) 0
+
+instance Num ChurchInt where
+  fromInteger = church
 
 zero = Ch (\f x -> x)
 one = inc zero
-
-ten = Ch (\f x -> f (f (f (f (f (f (f (f (f (f x))))))))))
-seven = Ch (\f x ->  f (f (f (f (f (f (f x)))))))
 
 --Int -> Int
 inc (Ch n) = Ch (\f x -> (f (n f x)))
@@ -25,7 +29,10 @@ true  = (\x y -> x)
 false = (\x y -> y)
 
 --Int -> Bool
-iszero :: Church -> a -> a -> a
+iszero :: ChurchInt -> ChurchBool a
 iszero (Ch n) = (n (\x -> false) true)
+
+lte :: ChurchInt -> ChurchInt -> ChurchBool a
+lte = (\n m -> iszero (sub n m))
 
 isZero n = iszero n True False

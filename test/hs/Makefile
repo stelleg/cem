@@ -1,18 +1,24 @@
 TESTS= exp-true \
-	     exp-false \
-       fact-true
+			 exp-false \
+			 fact-true \
+			 tak-true
+
+GHCFLAGS=-rtsopts -with-rtsopts='-K2G' '-H8G'
+
+profile: GHCFLAGS += -prof -fprof-auto
+profile: ${TESTS} Church.o
+
+opt: GHCFLAGS += -O2
+opt: ${TESTS} Church.o
 
 all: ${TESTS} *.hs
 
-${TESTS}: Church.o Y.o
-	ghc -O2 -c $@.hs
-	ghc -O2 -rtsopts -with-rtsopts='-K1024M' $^ -o $@ $@.o
+${TESTS}: *.hs Church.o
+	ghc -c $@.hs $(GHCFLAGS)
+	ghc $(GHCFLAGS) Church.o -o $@ $@.o
 
 Church.o: Church.hs
-	ghc -O2 -c Church.hs
-
-Y.o: Y.hs
-	ghc -O2 -c Y.hs
+	ghc -c $(GHCFLAGS) Church.hs
 
 clean: 
 	rm *.hi *.o

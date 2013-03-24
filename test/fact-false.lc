@@ -9,7 +9,7 @@
                 (iszero (fact tenbil))
               (ten ten))
             (Y G)) 
-          \r.\n.(((iszero n) n) ((mult n) (pred n))))
+          \r.\n.(((iszero n) \f.\x.(f x)) ((mult n) (pred n))))
         \f.\x.(f (f (f (f (f (f (f (f (f (f x)))))))))))
       \n.\f.\x.(((n \g.\h.(h (g f))) \u.x) \u.u))
     \m.\n.\f.(m (n f)))

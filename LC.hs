@@ -34,7 +34,9 @@ parseFile filename = do
   return $ deBruijn e []
 
 deBruijn :: Expr String -> [(String, Int)] -> Expr Int
-deBruijn (Var v)     ls = Var $ fromJust $ lookup v ls
+deBruijn (Var v)     ls = case lookup v ls of 
+  Just i -> Var i; 
+  Nothing -> error $ "unbound var " ++ v;
 deBruijn (Lam x t)   ls = Lam 0 $ deBruijn t $ (x, 0):[(x,y+1) | (x,y) <- ls]
 deBruijn (App t1 t2) ls = App (deBruijn t1 ls) (deBruijn t2 ls)
 

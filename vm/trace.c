@@ -29,16 +29,16 @@ void traceEnv(Environment* env){
 }
 
 void traceStack(Stack stack){
-  StackObject* stackptr;
+  Closure* stackptr;
   for(stackptr = stack.head; stackptr >= stack.tail; stackptr--){
     printf("\t{");
-      if(stackptr->update) 
-        printf("update %p", stackptr->updLoc);
+      if(!stackptr->code) 
+        printf("update %p", stackptr->env);
       else{
         printf("arg "); 
-        traceCode(stackptr->clos.code); 
+        traceCode(stackptr->code); 
         printf(", ");
-        printf("%p", stackptr->clos.env);
+        printf("%p", stackptr->env);
       }
     printf("}\n");
   }

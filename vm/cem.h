@@ -13,12 +13,8 @@ typedef struct Closure {Code* code; struct Environment* env; unsigned long count
 #else
 typedef struct Closure {Code* code; struct Environment* env;} Closure;
 #endif
-typedef enum StackMarker {
-  arg,
-  upd
-} StackMarker;
-typedef struct StackObject {StackMarker update; union {Closure clos; struct Environment* updLoc;};} StackObject;
-typedef struct Stack {struct StackObject* head; struct StackObject* tail;} Stack;
+
+typedef struct Stack {Closure* head; Closure* tail;} Stack;
 typedef struct Environment {Closure clos; struct Environment* next;} Environment;
 
 void trace(Closure clos, Stack stack);
