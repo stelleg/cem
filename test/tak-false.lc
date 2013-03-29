@@ -7,18 +7,18 @@
             (\mult.
               (\pred.
                 (\sub.
-                  (\eight.
-                    (\sixteen.
+                  (\seven.
+                    (\fourteen.
                       (\lte.
                         (\tak.
-                          (iszero ((sub (((tak sixteen) eight) zero)) one))
+                          (iszero (((tak fourteen) seven) zero))
                         (Y \tak.\x.\y.\z.((((lte x) y) 
                           z)
                           (((tak (((tak (pred x)) y) z))
                                  (((tak (pred y)) z) x))
                                  (((tak (pred z)) x) y)))))
                       \n.\m.(iszero ((sub n) m))) 
-                    ((mult eight) \f.\x.(f (f x))))
+                    ((mult seven) \f.\x.(f (f x))))
                   \f.\x.(f (f (f (f (f (f (f x))))))))
                 \m.\n.((n pred) m))
               \n.\f.\x.(((n \g.\h.(h (g f))) \u.x) \u.u))

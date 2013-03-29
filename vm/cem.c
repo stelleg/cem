@@ -3,17 +3,22 @@
 #include <string.h>
 #include "cem.h"
 
-#define OPGOTO 3
+#define OPUPDATESELF 3
 #define jump(ct, opcode) steps++; goto *ct[opcode];
 
 /* Global Variables */
+#ifdef DEBUG
+static unsigned long long stackSize = ((unsigned long long) 2) << 24;
+static unsigned long long envSize = ((unsigned long long) 2) << 26;
+#else
 static unsigned long long stackSize = ((unsigned long long) 2) << 26;
 static unsigned long long envSize = ((unsigned long long) 2) << 28;
+#endif
 
 Code* runCEM(Code* code){
   long long steps = 0, maxStack = 0, numVarIndir=0, numVarStraight=0, hotClos=0;
   bool varIndir;
-  static const void *codetable[] = {&&PUSH, &&TAKE, &&ENTER, &&GOTO};
+  static const void *codetable[] = {&&PUSH, &&TAKE, &&ENTER, &&UPDATESELF};
   /// INITIALIZATION ///
   Stack stack = (Stack) { NULL, malloc(stackSize * sizeof(Closure)) };
   if(!stack.tail){printf("Error: stack allocation failed\n"); exit(-1);}
@@ -23,12 +28,13 @@ Code* runCEM(Code* code){
   Environment* freeEnv = env;
   Closure clos = (Closure) { code, NULL };
   //tmp variables
-  int var; Environment* tmpenv; Closure tmpclos;
-  Code go = (Code) {OPGOTO, .u=0}; //used for collapsed marker
+  int var; Closure tmpclos;
+  Code updateself = (Code) {OPUPDATESELF, .u=0}; //used for collapsed marker
   jump(codetable, clos.code->opcode);
 
-GOTO:
+UPDATESELF:
   clos = clos.env->clos;
+  tmpclos.env->clos = clos; //we can use tmpclos because it was set in var before entering this code
   jump(codetable,clos.code->opcode);
 
 PUSH:
@@ -64,18 +70,16 @@ TAKE:
     goto TAKE;
   }
   
-  
   #ifdef TRACE
   printf("TAKE: "); trace(clos,stack);
   #endif 
   
-  tmpenv = clos.env;
+  *freeEnv = (Environment) {*stack.head--, clos.env};
   clos.env = freeEnv++;
   if(freeEnv == env + envSize){
     printf("Error: environment overflow\n");
     exit(-1);
   }
-  *clos.env = (Environment) {*stack.head--, tmpenv};
   jump(codetable,(++clos.code)->opcode);
 
 ENTER:
@@ -101,16 +105,21 @@ ENTER:
 
   tmpclos = clos;
   clos = clos.env->clos;
+
+  #ifdef ENTEROPT
   if(tmpclos.env->clos.code->opcode != OPTAKE){
   #ifdef COLLAPSED
   //Collapsed marker optimiziation
     if(stack.head >= stack.tail && !stack.head->code){
       tmpclos.env->clos.env = stack.head->env;
-      tmpclos.env->clos.code = &go;
+      tmpclos.env->clos.code = &updateself;
     }else 
-    #endif
+  #endif
       *(++stack.head) = (Closure){ NULL, tmpclos.env };
   }
+  #else
+  *(++stack.head) = (Closure){ NULL, tmpclos.env };
+  #endif
 
 #ifdef DEBUG
   hotClos = ++tmpclos.env->clos.count > hotClos ? tmpclos.env->clos.count : hotClos;

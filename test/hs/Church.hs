@@ -1,7 +1,7 @@
 {-#Language RankNTypes #-}
 module Church where
 
-y f = f (y f)
+fix f = f (fix f)
 
 newtype ChurchInt = Ch (forall a.(a->a)->a->a)
 type ChurchBool a = a -> a -> a

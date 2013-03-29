@@ -7,8 +7,10 @@ debug: cem
 trace: CFLAGS += -DTRACE
 trace: debug
 
+enteropt: CFLAGS += -DENTEROPT
+enteropt: opt
 collapsed: CFLAGS += -DCOLLAPSED
-collapsed: opt
+collapsed: debug
 
 all: cem
 

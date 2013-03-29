@@ -1,17 +1,17 @@
 TESTS= exp-true \
 			 exp-false \
 			 fact-true \
-			 tak-true
+			 tak-false \
+			 tarai-true
 
-GHCFLAGS=-rtsopts -with-rtsopts='-K2G' '-H8G'
 
 profile: GHCFLAGS += -prof -fprof-auto
-profile: ${TESTS} Church.o
+profile: opt
 
-opt: GHCFLAGS += -O2
+opt: GHCFLAGS += -O2 -rtsopts -with-rtsopts='-k2G' -with-rtsopts='-H8G'
 opt: ${TESTS} Church.o
 
-all: ${TESTS} *.hs
+all: opt
 
 ${TESTS}: *.hs Church.o
 	ghc -c $@.hs $(GHCFLAGS)
