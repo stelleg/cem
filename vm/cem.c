@@ -134,15 +134,14 @@ OP:
   #ifdef TRACE
   printf("OP: "); trace(clos,stack);
   #endif
-  i1 = (*stack.head--).i;
   i2 = (*stack.head--).i;
+  i1 = (*stack.head--).i;
   switch(clos.code->u.op){
     case 0: i = i1 +  i2; break;
     case 1: i = i1 -  i2; break;
     case 2: i = i1 *  i2; break;
     case 3: i = i1 /  i2; break;
     case 4: i = i1 == i2; break;
-    case 5: i = i1 != i2; break;
   }
   clos = (Closure) {&lit, .i=i};
   goto LIT;
