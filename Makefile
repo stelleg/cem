@@ -1,18 +1,20 @@
 CC=gcc
 
-opt: CFLAGS += -O3 
+# GCC Debugging options
+opt: CFLAGS += -g
 opt: cem
 debug: CFLAGS += -DDEBUG -g
 debug: cem
 trace: CFLAGS += -DTRACE
 trace: debug
 
+# Optimization options
 enteropt: CFLAGS += -DENTEROPT
 enteropt: opt
 collapsed: CFLAGS += -DCOLLAPSED
-collapsed: debug
+collapsed: opt
 
-all: cem
+all: opt
 
 cem: Main.hs LC.hs VM.hs vm/cem.o
 	ghc -O2 vm/trace.o vm/cem.o --make Main.hs -o cem

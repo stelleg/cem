@@ -3,7 +3,6 @@
 #include <string.h>
 #include "cem.h"
 
-#define OPUPDATESELF 3
 #define jump(ct, opcode) steps++; goto *ct[opcode];
 
 /* Global Variables */
@@ -15,27 +14,26 @@ static unsigned long long stackSize = ((unsigned long long) 2) << 26;
 static unsigned long long envSize = ((unsigned long long) 2) << 28;
 #endif
 
-Code* runCEM(Code* code){
+Closure* runCEM(Code* code){
   long long steps = 0, maxStack = 0, numVarIndir=0, numVarStraight=0, hotClos=0;
   bool varIndir;
-  static const void *codetable[] = {&&PUSH, &&TAKE, &&ENTER, &&UPDATESELF};
+  static const void *codetable[] = {&&PUSH, &&TAKE, &&ENTER, &&CONST, &&OP, &&LIT};
   /// INITIALIZATION ///
   Stack stack = (Stack) { NULL, malloc(stackSize * sizeof(Closure)) };
-  if(!stack.tail){printf("Error: stack allocation failed\n"); exit(-1);}
   stack.head = stack.tail - 1;
+  if(!stack.tail){printf("Error: stack allocation failed\n"); exit(-1);}
   Environment* env = malloc(envSize * sizeof(Environment)); 
-  if(!env){printf("Error: env allocation failed\n"); exit(-1);}
   Environment* freeEnv = env;
-  Closure clos = (Closure) { code, NULL };
+  if(!env){printf("Error: env allocation failed\n"); exit(-1);}
+  Closure* closure;
+  #ifdef DEBUG
+  Closure clos = (Closure) {code, NULL, 0};
+  #else
+  Closure clos = (Closure) {code, NULL};
+  #endif
   //tmp variables
-  int var; Closure tmpclos;
-  Code updateself = (Code) {OPUPDATESELF, .u=0}; //used for collapsed marker
+  int var, i, i1, i2; Closure tmpclos; Environment* tmpenv; Code lit = (Code) {OPLIT, 0};
   jump(codetable, clos.code->opcode);
-
-UPDATESELF:
-  clos = clos.env->clos;
-  tmpclos.env->clos = clos; //we can use tmpclos because it was set in var before entering this code
-  jump(codetable,clos.code->opcode);
 
 PUSH:
   #ifdef TRACE
@@ -53,7 +51,7 @@ PUSH:
 
 DONE: 
   #ifdef DEBUG
-  printf("Result: "); traceCode(clos.code); printf("\n");
+  printf("Result: "); traceCode(clos); printf("\n");
   printf("Took %llu steps \n", steps);
   printf("Hottest closure: %llu\n", hotClos);
   printf("Max stacksize = %llu \n", maxStack);
@@ -61,7 +59,9 @@ DONE:
   printf("%llu straight var lookups, %llu indirect var lookups\n",
          numVarStraight, numVarIndir);
   #endif
-  return clos.code;
+  closure = malloc(sizeof(Closure));
+  *closure = clos;
+  return closure;
 
 TAKE: 
   if(stack.head < stack.tail) goto DONE;
@@ -106,26 +106,47 @@ ENTER:
   tmpclos = clos;
   clos = clos.env->clos;
 
-  #ifdef ENTEROPT
-  if(tmpclos.env->clos.code->opcode != OPTAKE){
-  #ifdef COLLAPSED
-  //Collapsed marker optimiziation
-    if(stack.head >= stack.tail && !stack.head->code){
-      tmpclos.env->clos.env = stack.head->env;
-      tmpclos.env->clos.code = &updateself;
-    }else 
-  #endif
-      *(++stack.head) = (Closure){ NULL, tmpclos.env };
-  }
-  #else
-  *(++stack.head) = (Closure){ NULL, tmpclos.env };
-  #endif
-
 #ifdef DEBUG
   hotClos = ++tmpclos.env->clos.count > hotClos ? tmpclos.env->clos.count : hotClos;
 #endif
   jump(codetable,clos.code->opcode);
-  
+ 
+CONST: 
+  clos = (Closure) {&lit, .i=clos.code->u.l};
+  goto LIT;
+
+LIT:
+  #ifdef TRACE
+  printf("LIT: "); trace(clos,stack);
+  #endif
+  if(stack.head < stack.tail) goto DONE;
+  if(!stack.head->code){
+    (stack.head--)->env->clos = clos;
+    goto LIT;
+  }
+ 
+  tmpclos = clos;
+  clos = *stack.head;
+  *stack.head = tmpclos;
+  jump(codetable, clos.code->opcode);
+
+OP: 
+  #ifdef TRACE
+  printf("OP: "); trace(clos,stack);
+  #endif
+  i1 = (*stack.head--).i;
+  i2 = (*stack.head--).i;
+  switch(clos.code->u.op){
+    case 0: i = i1 +  i2; break;
+    case 1: i = i1 -  i2; break;
+    case 2: i = i1 *  i2; break;
+    case 3: i = i1 /  i2; break;
+    case 4: i = i1 == i2; break;
+    case 5: i = i1 != i2; break;
+  }
+  clos = (Closure) {&lit, .i=i};
+  goto LIT;
+
   //Shouldn't reach here
   return NULL;
 }

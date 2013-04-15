@@ -3,28 +3,39 @@
 #include "cem.h"
 
 //Debugging trace functions
-void traceCode(Code* code){
-  switch(code->opcode){
+void traceCode(Closure clos){
+  switch(clos.code->opcode){
     case OPPUSH:
-      printf("("); traceCode(code+1); printf(" "); traceCode(code->u.m); printf(")");
+      printf("("); traceCode((Closure){clos.code+1,clos.env}); 
+      printf(" "); 
+      traceCode((Closure){clos.code->u.m, clos.env}); printf(")");
       break;
     case OPTAKE:
-      printf("\\"); traceCode(code+1);
+      printf("\\"); traceCode((Closure){clos.code+1, clos.env});
       break;
     case OPENTER: 
-      printf("%d", code->u.var); 
+      printf("e:%d", clos.code->u.var); 
+      break;
+    case OPLIT:
+      printf("l:%d", clos.i);
+      break;
+    case OPCONST:
+      printf("c:%d", clos.code->u.l);
+      break;
+    case OPOP:
+      printf("op:%d", clos.code->u.op);
       break;
   }
 }
 
 void traceEnv(Environment* env){
   if(env){
-      printf("\t[");
-        traceCode(env->clos.code); 
-        printf(", ");
-        printf("%p", env->clos.env);
-      printf("]\n");
-      traceEnv(env->next);
+    printf("\t[");
+      traceCode((Closure){env->clos.code, env->clos.env}); 
+      printf(", ");
+      printf("%p", env->clos.env);
+    printf("]\n");
+    traceEnv(env->next);
   }
 }
 
@@ -36,7 +47,7 @@ void traceStack(Stack stack){
         printf("update %p", stackptr->env);
       else{
         printf("arg "); 
-        traceCode(stackptr->code); 
+        traceCode(*stackptr); 
         printf(", ");
         printf("%p", stackptr->env);
       }
@@ -46,9 +57,11 @@ void traceStack(Stack stack){
 
 //Full state trace function
 void trace(Closure clos, Stack stack){
-  printf("Stacksize: %ld, ", stack.head + 1 - stack.tail); 
-  traceCode(clos.code); printf("\n");
-  traceEnv(clos.env);
+  traceCode(clos); printf("\n");
   traceStack(stack);
+  if(clos.code->opcode == OPLIT || clos.code->opcode == OPCONST)
+    printf("\t[%d]\n", clos.i);
+  else
+    traceEnv(clos.env);
 }
 
