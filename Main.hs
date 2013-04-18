@@ -7,6 +7,5 @@ import Foreign.Marshal.Array (newArray, peekArray)
 
 main = do
   code <- liftM compile.LC.parseFile .head =<< SE.getArgs
-  print code
   print.head =<< peekArray 1 =<< c_cem =<< newArray code
 

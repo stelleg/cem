@@ -33,6 +33,8 @@ Closure* runCEM(Code* code){
   #endif
   //tmp variables
   int var, i, i1, i2; Closure tmpclos; Environment* tmpenv; Code lit = (Code) {OPLIT, 0};
+  Code true[] =  {{OPTAKE, 0}, {OPTAKE, 0}, {OPENTER, .u.var=1}}; 
+  Code false[] = {{OPTAKE, 0}, {OPTAKE, 0}, {OPENTER, .u.var=0}}; 
   jump(codetable, clos.code->opcode);
 
 PUSH:
@@ -137,14 +139,32 @@ OP:
   i2 = (*stack.head--).i;
   i1 = (*stack.head--).i;
   switch(clos.code->u.op){
-    case 0: i = i1 +  i2; break;
-    case 1: i = i1 -  i2; break;
-    case 2: i = i1 *  i2; break;
-    case 3: i = i1 /  i2; break;
-    case 4: i = i1 == i2; break;
+    case 0: i = i1 +  i2; clos = (Closure) {&lit, .i=i}; break;
+    case 1: i = i1 -  i2; clos = (Closure) {&lit, .i=i}; break;
+    case 2: i = i1 *  i2; clos = (Closure) {&lit, .i=i}; break;
+    case 3: i = i1 /  i2; clos = (Closure) {&lit, .i=i}; break;
+    case 4: 
+      if(i1 == i2) clos.code = true;
+      else         clos.code = false;
+      break;
+    case 5:
+      if(i1 < i2) clos.code = true;
+      else        clos.code = false;
+      break;
+    case 6:
+      if(i1 > i2) clos.code = true;
+      else        clos.code = false;
+      break;
+    case 7:
+      if(i1 <= i2) clos.code = true;
+      else         clos.code = false;
+      break;
+    case 8:
+      if(i1 >= i2) clos.code = true;
+      else         clos.code = false;
+      break;
   }
-  clos = (Closure) {&lit, .i=i};
-  goto LIT;
+  jump(codetable, clos.code->opcode);
 
   //Shouldn't reach here
   return NULL;

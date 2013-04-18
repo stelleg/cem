@@ -15,7 +15,7 @@ data Expr a where
 
 type Literal = Int
 
-data Op = Add | Sub | Mul | Div deriving (Enum, Eq)
+data Op = Add | Sub | Mul | Div | Eq | Lt | Gt | Le | Ge deriving (Enum, Eq)
 
 instance Show Op where
   show o = case o of
@@ -23,6 +23,11 @@ instance Show Op where
     Sub -> "-"
     Div -> "/"
     Mul -> "*"
+    Eq  -> "="
+    Lt  -> "<"
+    Gt  -> ">"
+    Le  -> "<="
+    Ge  -> ">="
 
 instance Show a => Show (Expr a) where
   show (Var s)     = show s
@@ -42,15 +47,20 @@ lam = do char '\\'; x <- word; char '.'; spaces;   e <- lc;  return $ Lam x e
 app = do char '(';  e1 <- lc;  spaces;   e2 <- lc; char ')'; return $ App e1 e2
 var = Var <$> word
 lit = Lit . read <$> many1 digit
-op  = Op . opChar <$> oneOf "+-*/"
+op  = Op . opString <$> many1 (oneOf "+-*/=<>")
 
 word = many1 letter
 
-opChar c = case c of
-  '+' -> Add
-  '-' -> Sub
-  '*' -> Mul
-  '/' -> Div
+opString c = case c of
+  "+" -> Add
+  "-" -> Sub
+  "*" -> Mul
+  "/" -> Div
+  "=" -> Eq
+  "<" -> Lt
+  ">" -> Gt
+  "<=" -> Le
+  ">=" -> Ge
 
 parseFile :: String -> IO (Expr Int)
 parseFile filename = do 

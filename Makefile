@@ -1,7 +1,7 @@
 CC=gcc
 
 # GCC Debugging options
-opt: CFLAGS += -g
+opt: CFLAGS += -O3
 opt: cem
 debug: CFLAGS += -DDEBUG -g
 debug: cem
