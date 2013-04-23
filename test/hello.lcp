@@ -1,0 +1,9 @@
+(\Y.
+  (\cons. 
+    (\nil.
+      (\print.
+        (print ((cons 104) ((cons 101) ((cons 108) ((cons 108) ((cons 111) ((cons 10) nil)))))))
+      (Y \print.\list.((list nil) \head.\tail.(((head ->) (print tail)) nil))))
+    \a.\b.a)
+  \head.\tail.\a.\b.((b head) tail))
+\g.(\x.(g (x x)) \x.(g (x x))))

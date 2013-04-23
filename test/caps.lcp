@@ -1,0 +1,15 @@
+(\Y.
+  (\cons. 
+    (\nil.
+      (\print.
+        (\read.
+          (\capitalize.
+            (\map.
+              (print ((map capitalize) read))
+            (Y \map.\f.\xs.((xs nil) \h.\t.((cons (f h)) ((map f) t)))))
+          \c.(((c (97 >=)) (((c (122 <=)) (c (32 -))) c)) c))
+        (Y \read.(<- \s.\c.(((s (1 =)) ((cons c) read)) nil))))
+      (Y \print.\s.((s 0) \h.\t.((h ->) \s.(print t)))))
+    \a.\b.a)
+  \head.\tail.\a.\b.((b head) tail))
+\g.(\x.(g (x x)) \x.(g (x x))))

@@ -8,12 +8,6 @@ debug: cem
 trace: CFLAGS += -DTRACE
 trace: debug
 
-# Optimization options
-enteropt: CFLAGS += -DENTEROPT
-enteropt: opt
-collapsed: CFLAGS += -DCOLLAPSED
-collapsed: opt
-
 all: opt
 
 cem: Main.hs LC.hs VM.hs vm/cem.o

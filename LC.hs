@@ -15,7 +15,7 @@ data Expr a where
 
 type Literal = Int
 
-data Op = Add | Sub | Mul | Div | Eq | Lt | Gt | Le | Ge deriving (Enum, Eq)
+data Op = Add | Sub | Mul | Div | Eq | Lt | Gt | Le | Ge | Write | Read deriving (Enum, Eq)
 
 instance Show Op where
   show o = case o of
@@ -28,6 +28,8 @@ instance Show Op where
     Gt  -> ">"
     Le  -> "<="
     Ge  -> ">="
+    Write -> "->"
+    Read  -> "<-"
 
 instance Show a => Show (Expr a) where
   show (Var s)     = show s
@@ -61,6 +63,8 @@ opString c = case c of
   ">" -> Gt
   "<=" -> Le
   ">=" -> Ge
+  "->" -> Write
+  "<-" -> Read
 
 parseFile :: String -> IO (Expr Int)
 parseFile filename = do 

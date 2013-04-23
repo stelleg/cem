@@ -1,5 +1,5 @@
 (\Y.
   (\fact.
-    (fact 25) 
+    (fact 5) 
   (Y \fact.\n.(((n (1 =)) 1) (n ((fact (n (1 -))) *)))))
 \g.(\x.(g (x x)) \x.(g (x x))))

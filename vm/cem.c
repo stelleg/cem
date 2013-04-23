@@ -104,12 +104,13 @@ ENTER:
   for(var=clos.code->u.var; var > 0; var--)
     clos.env = clos.env->next;
   #endif 
+  if(clos.env->clos.code->opcode == OPPUSH || clos.env->clos.code->opcode == OPENTER)
+    *(++stack.head) = (Closure) {0, clos.env};
 
-  tmpclos = clos;
   clos = clos.env->clos;
 
 #ifdef DEBUG
-  hotClos = ++tmpclos.env->clos.count > hotClos ? tmpclos.env->clos.count : hotClos;
+  hotClos = ++clos.count > hotClos ? clos.count : hotClos;
 #endif
   jump(codetable,clos.code->opcode);
  
@@ -136,32 +137,39 @@ OP:
   #ifdef TRACE
   printf("OP: "); trace(clos,stack);
   #endif
-  i2 = (*stack.head--).i;
-  i1 = (*stack.head--).i;
+  if (clos.code->u.op < 9){
+    i2 = (*stack.head--).i;
+    i1 = (*stack.head--).i;
+  }
   switch(clos.code->u.op){
-    case 0: i = i1 +  i2; clos = (Closure) {&lit, .i=i}; break;
-    case 1: i = i1 -  i2; clos = (Closure) {&lit, .i=i}; break;
-    case 2: i = i1 *  i2; clos = (Closure) {&lit, .i=i}; break;
-    case 3: i = i1 /  i2; clos = (Closure) {&lit, .i=i}; break;
+    case 0: i = i1 + i2; clos = (Closure) {&lit, .i=i}; break;
+    case 1: i = i1 - i2; clos = (Closure) {&lit, .i=i}; break;
+    case 2: i = i1 * i2; clos = (Closure) {&lit, .i=i}; break;
+    case 3: i = i1 / i2; clos = (Closure) {&lit, .i=i}; break;
     case 4: 
-      if(i1 == i2) clos.code = true;
-      else         clos.code = false;
+      clos.code = i1 == i2 ? true : false;
       break;
     case 5:
-      if(i1 < i2) clos.code = true;
-      else        clos.code = false;
+      clos.code = i1 < i2 ? true : false;
       break;
     case 6:
-      if(i1 > i2) clos.code = true;
-      else        clos.code = false;
+      clos.code = i1 > i2 ? true : false;
       break;
     case 7:
-      if(i1 <= i2) clos.code = true;
-      else         clos.code = false;
+      clos.code = i1 <= i2 ? true : false;
       break;
     case 8:
-      if(i1 >= i2) clos.code = true;
-      else         clos.code = false;
+      clos.code = i1 >= i2 ? true : false;
+      break;
+    case 9:
+      i = write(1, &(*stack.head--).i, 1);
+      clos = (Closure) {&lit, .i=i};
+      break;
+    case 10:
+      clos = *stack.head;
+      i = read(0, &i1, 1);
+      *(stack.head) = (Closure) {&lit, .i=i1};
+      *(++stack.head) = (Closure) {&lit, .i=i};
       break;
   }
   jump(codetable, clos.code->opcode);
