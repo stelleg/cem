@@ -1,0 +1,9 @@
+(\iszero.
+  (\pred.
+    (\sub.
+      (\ten.
+        (iszero ((sub (pred ten)) ten))
+      \f.\x.(f (f (f (f (f (f (f (f (f (f x)))))))))))
+    \m.\n.((n pred) m))
+  \n.\f.\x.(((n \g.\h.(h (g f))) \u.x) \u.u))
+\n.((n \x.\x.\y.y) \x.\y.x))

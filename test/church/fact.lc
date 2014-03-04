@@ -1,0 +1,3 @@
+fact = (Y \fact.\n.(iszero (pred n) n (mult n (fact (pred n)))))
+
+[unchurch fact church 5]

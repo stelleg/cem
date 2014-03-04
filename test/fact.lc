@@ -1,0 +1,3 @@
+fact = (Y \fact.\n.([n 1 =] 1 [n [fact n 1 -] *]))
+
+[putStrLn showInt fact 5]

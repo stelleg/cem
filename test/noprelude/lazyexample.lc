@@ -1,0 +1,4 @@
+id = \x.x
+a = (id id)
+(a a)
+

@@ -1,0 +1,4 @@
+sieve = \l.(l Nil \h.\t.(Cons h (filter \x.[[x h %] 0 >] t)))
+primes = sieve (from 2)
+
+[putStrLn showInt (drop 1000 primes 0 \h.\t.h)]

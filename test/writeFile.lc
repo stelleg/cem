@@ -1,0 +1,3 @@
+main = (writeFile "/tmp/test_out" "Hello world")
+
+[main exit]

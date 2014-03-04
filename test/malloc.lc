@@ -1,0 +1,4 @@
+mmap = \addr.\len.\prot.\flags.\fd.\offset.[addr len prot flags fd offset 9 !6]
+malloc = \len.(mmap 0 len 255 34 [0 1 -] 0)
+
+(malloc 1000 (0 =) 1 0)

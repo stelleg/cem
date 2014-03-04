@@ -1,0 +1,1 @@
+(putStrLn (fork 0 (0 =) "Child says hi" "Parent says hi"))

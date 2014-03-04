@@ -1,0 +1,15 @@
+Y = \g.(\x.[g x x] \x.[g x x])
+succ = \n.\f.\x.(f (n f x))
+zero = \f.\x.x
+pred = \n.\f.\x.(n \g.\h.[h g f] \u.x \u.u)
+pow = \m.\n.(n m)
+add = \n.\m.(m succ n)
+sub = \n.\m.(m pred n) 
+mult = \n.\m.\f.[m n f]
+iszero = \n.(n \x.\t.\f.f \t.\f.t)
+lte = \n.\m.(iszero (sub n m))
+equal = \n.\m.(and (lte m n) (lte n m))
+div = (Y \div.\n.\m.(lte m n (succ (div (sub n m) m)) zero))
+mod = (Y \mod.\n.\m.(lte m n (mod (sub n m) m) n))
+church = (Y \church.\n.([n 0 =] zero (succ (church [n 1 -]))))
+unchurch = \n.(n \x.[x 1 +] 0)

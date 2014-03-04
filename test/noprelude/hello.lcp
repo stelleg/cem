@@ -1,0 +1,11 @@
+(\Y.
+  (\cons. 
+    (\nil.
+      (\print.
+        (\h.(\e.(\l.(\o.(\newline.
+          (print (h(e(l(l(o(newline nil)))))))
+        (cons 10)) (cons 111)) (cons 108)) (cons 101)) (cons 104))
+      (Y \print.\list.((list 0) \head.\tail.((head ->) \s.(print tail)))))
+    \a.\b.a)
+  \head.\tail.\a.\b.((b head) tail))
+\g.(\x.(g (x x)) \x.(g (x x))))

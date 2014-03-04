@@ -1,0 +1,5 @@
+filter = \y.(foldr \x.\l.([[x y %] 0 =] l (Cons x l)) Nil)
+sieve = (Y \sieve.\l.(l Nil \x.\xs.(Cons x (filter x xs))))
+upto = (Y \upto.\m.\n.([m n >] Nil (Cons m (upto [m 1 +] n))))
+
+(map (compose putStrLn showInt) (sieve (upto 2 20)))

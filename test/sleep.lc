@@ -1,0 +1,5 @@
+[
+  (putStrLn "Going to sleep now...") then
+  (sleep 1 0) then 
+  (putStrLn "Slept for one second")
+]

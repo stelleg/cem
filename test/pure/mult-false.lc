@@ -1,0 +1,7 @@
+(\iszero.
+  (\mult.
+    (\ten.
+      (iszero ((mult ten) ten))
+    \f.\x.(f (f (f (f (f (f (f (f (f (f x)))))))))))
+  \m.\n.\f.(m (n f)))
+\n.((n \z.\x.\y.y) \x.\y.x))

@@ -1,0 +1,1 @@
+(putStrLn (foldr Cons Nil "Hello fold."))

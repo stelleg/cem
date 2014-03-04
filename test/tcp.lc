@@ -1,0 +1,3 @@
+loop = (Y \x.
+
+[interact (scanl \p.\c.(and [p ' ' =] (and [c 97 >=] [c 122 <=]) [c 32 -] c) ' ')]

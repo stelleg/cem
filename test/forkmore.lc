@@ -1,0 +1,8 @@
+fork = \child.\parent.(fork 0 (0 =) child parent)
+
+[
+  (print "Parent thread begins") then
+  [fork print "This is a forked print"]
+  [fork print "Another forked print"]
+  (print "Parent thread ends")
+]

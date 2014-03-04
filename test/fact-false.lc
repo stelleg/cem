@@ -1,0 +1,17 @@
+(\Y.
+  (\iszero.
+    (\mult.
+      (\pred.
+        (\ten.
+          (\G.
+            (\fact.
+              (\tenbil.
+                (iszero (fact tenbil))
+              (ten ten))
+            (Y G)) 
+          \r.\n.(((iszero n) \f.\x.(f x)) ((mult n) (pred n))))
+        \f.\x.(f (f (f (f (f (f (f (f (f (f x)))))))))))
+      \n.\f.\x.(((n \g.\h.(h (g f))) \u.x) \u.u))
+    \m.\n.\f.(m (n f)))
+  \n.((n \z.\x.\y.y) \x.\y.x))
+\g.(\x.(g (x x)) \x.(g (x x))))

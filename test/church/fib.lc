@@ -1,0 +1,5 @@
+one = (succ zero)
+two = (succ one)
+fib = (Y \fib.\n.(lte n two one (add [fib pred n] [fib pred pred n])))
+
+[putStrLn showInt unchurch fib church readInt head getArgs]

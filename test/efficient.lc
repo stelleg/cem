@@ -1,0 +1,5 @@
+f = \v.\w.\x.\y.\z.(Pair [w (x +) (y +) (z +) (3 +)] (v 0 \h.\t.h))
+big = (Y \big.\n.([n 1 <] Nil (Cons n (big [n 1 -]))))
+loop = (Y \loop.\n.\res.([n 1 <] res (loop [n 1 -] (Cons (f (big n) 0 0 0 0) res))))
+
+(putStrLn (loop 100 Nil))

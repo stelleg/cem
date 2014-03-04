@@ -1,0 +1,12 @@
+Z = \z.\s.z
+S = \n.\z.\s.(s n)
+
+nat = (Y \nat.\x.([x 1 <] Z [S nat x 1 -]))
+int = (Y \int.\x.(x 0 \x.[(int x) 1 +]))
+add = (Y \add.\x.\y.(x y \x.(S (add x y))))
+mul = (Y \mul.\x.\y.(y Z \y.(add (mul x y) x)))
+pow = (Y \pow.\x.\y.(y (S Z) \y.(mul x (pow x y))))
+
+power = [nat readInt head getArgs]
+
+[putStrLn showInt int (pow (nat 3) power)]

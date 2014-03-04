@@ -1,0 +1,7 @@
+tak = (Y \tak.\x.\y.\z.(lte x y 
+  z 
+  (tak (tak (pred x) y z)
+       (tak (pred y) z x)
+       (tak (pred z) x y))))
+
+[putStrLn showBool iszero (sub (tak (church 14) (church 7) zero) (succ zero))]

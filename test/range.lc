@@ -1,0 +1,1 @@
+(putStrLn (concatMap \i.(append (showInt i) " ") (range 5 10)))

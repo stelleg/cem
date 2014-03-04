@@ -1,0 +1,7 @@
+f = (Y \f.(\odd.\even.\p.(p
+    \n.([n 0 =] False (even [n 1 -]))
+    \n.([n 0 =] True (odd [n 1 -]))) (f fst) (f snd)))
+odd = (f fst)
+even = (f snd)
+
+[putStrLn showBool odd 100]

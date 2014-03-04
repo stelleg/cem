@@ -1,0 +1,4 @@
+Y = \g.(\x.[g x x] \z.[g z z])
+fact = \m.((Y \fact.\n.\acc.([n 2 <] acc [[acc n *] [n 1 -] fact])) m 1)
+
+(fact 5)

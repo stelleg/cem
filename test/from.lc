@@ -1,0 +1,1 @@
+[putStrLn concat (map \i.(append (showInt i) " ")) (take 6) from 5]

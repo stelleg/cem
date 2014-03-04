@@ -1,0 +1,1 @@
+[putStrLn showInt unchurch (div (church 10) (church 5))]

@@ -1,0 +1,73 @@
+# Memory read and write wrappers
+mvq = \val.\addr.[val addr @q]
+rdq = \addr.[addr $q]
+mvl = \val.\addr.[val addr @l]
+rdl = \addr.[addr $l]
+mvs = \val.\addr.[val addr @s]
+rds = \addr.[addr $s]
+mvb = \val.\addr.[val addr @b]
+rdb = \addr.[addr $b]
+mv = mvq
+rd = rdq
+
+# System calls
+mmap = \addr.\len.\prot.\flags.\fd.\offset.[addr len prot flags fd offset 9 !6]
+write = \fd.\buf.\count.[fd buf count 1 !3]
+read = \fd.\buf.\count.[fd buf count 0 !3]
+open = \fname.\flags.\mode.[fname flags mode 2 !3]
+close = \fd.[fd 3 !1]
+exit = \code.[code 60 !1]
+socket = \dom.\type.\prot.[dom type prot 41 !3]
+fork = \world.[57 !0]
+nanosleep = \rqtp.\rmtp.[rqtp rmtp 35 !2]
+munmap = \addr.\len.[addr len 11 !2] 
+
+# Basic IO (wrappers on syscalls)
+pageSize = 4096
+malloc = \len.(mmap 0 len 255 34 [0 1 -] 0)
+free = \ptr.(munmap ptr 1)
+sleep = \sec.\nsec.(malloc 2 \p.[(mvq sec p) (mvq nsec [p 8 +]) (nanosleep p p) \r.(free p \r'.r)])
+newPage = \w.(malloc pageSize \ptr.([ptr 0 <=] (exit 1) ptr))
+putStrBuf = (Y \pstr.\loc.\s.(s loc \h.\t.([h loc @b] (pstr [loc 1 +] t)))) 
+readPtrBuf = (Y \rstr.\loc.\n.([n 0 <=] 
+  Nil 
+  ((rd loc Cons (rstr [loc 8 +] [n 1 -])))))
+readStrBuf = (Y \rstr.\loc.\n.([n 0 <=] 
+  Nil 
+  (\c.([c 0 =] Nil (Cons c (rstr [loc 1 +] [n 1 -]))) (rdb loc))))
+writeFd = \fd.\str.[\iobuf.[(putStrBuf iobuf str) \loc.(write fd iobuf [loc iobuf -])] newPage 0]
+writeFile = \fname.\str.[\iobuf.[(putStrBuf iobuf fname) then
+                                (open iobuf 577 420) \fd.
+                                ([fd 1024 >] (exit 2) (writeFd fd str))]
+                        newPage 0]
+readFd = \fd.[\iobuf.(read fd iobuf pageSize (readStrBuf iobuf)) newPage 0]
+readFile = \fname.\str.[\iobuf.[(putStrBuf iobuf fname) then
+                               (open iobuf 577 420) \fd.
+                               ([fd 1024 >] (exit 2) (writeFd fd str))]
+                       newPage 0] 
+putStr = (writeFd 1)
+putStrLn = \s.(writeFd 1 s \n.[(putStr "\n") n +])
+print = putStrLn
+getContents = (readFd 0)
+getLine = (takeWhile \c.[c '\n' /=]  (readFd 0))
+interact = \f.[putStr f getContents]
+getArgs = [tail (map (flip readStrBuf 1024)) (readPtrBuf argv argc)]
+
+# Prelude-like utilities that require IO, e.g. partial functions
+error = \s.(putStrLn s exit)
+PME = (error "Pattern match error")
+head = \l.(l (error "head of empty list") \h.\t.h)
+index = \n.\k.(Y \index.\n.\k.\cont.([n 0 =]
+  cont
+  \x.(index [n 1 -] k ([k n =] x cont))) n [[n k -] 1 +] (error "index failed"))
+listIndex = (Y \listIndex.\n.\l.(l (error "listIndex failed") \h.\t.([n 0 =] h (listIndex [n 1 -] t))))
+fst = (index 2 1)
+snd = (index 2 2)
+printf = (Y \printf.\acc.\l.(l acc \h.\t.([h '%' =] 
+  (t (error "misformed format") \h.\t'.[
+    ([h 'd' =] \i.(printf (append acc (showInt i)) t'))
+    ([h 'c' =] \c.(printf (append acc (Cons c Nil)) t'))
+    ([h 's' =] \s.(printf (append acc s) t'))
+    (error "misformed format")])
+  (printf (append acc (Cons h Nil)) t))) Nil)
+

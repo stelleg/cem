@@ -1,0 +1,4 @@
+(putStrLn (printf "%d is an int, \'%c\' is a char, and \"%s\" is a string" 
+  3 
+  'G'
+  "Hello world"))

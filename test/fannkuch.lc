@@ -1,0 +1,15 @@
+rotate = \n.\xs.(xs (error "empty rotate") \x.\xs.(splitAt [n 1 -] xs \a.\b.(append a (Cons x b))))
+perms = \l.(foldr \n.\ls.(concatMap \l.(take n (iterate (rotate n) l)) ls) 
+  (Cons l Nil) (range 2 (length l)))
+rev = \xs.(xs (error "empty rev") \x.\xs.(splitAt [x 1 -] xs 
+  \a.\b.(append (reverse a) (Cons x b))))
+flop = (Y \flop.\xs.(xs (error "empty flop") \h.\t.([h 1 =] 0 [(flop (rev xs)) 1 +])))
+fannuch = \xs.(foldl max 0 (map flop xs))
+n = [readInt head getArgs]
+ps = [perms (range 1) n]
+
+[
+  [putStr unlines [map concatMap showInt] (take 30) ps]
+  then 
+  [putStrLn (printf "Pfannkuchen(%d) = %d" n (fannuch ps))]
+]

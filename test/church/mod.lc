@@ -1,0 +1,1 @@
+[putStrLn showInt unchurch (mod (church 35) (church 6))]
