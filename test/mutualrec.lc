@@ -1,7 +1,12 @@
-f = (Y \f.(\odd.\even.\p.(p
+f = (Y \f.{
+    odd = (f fst)
+    even = (f snd)
+  } 
+  \p.(p
     \n.([n 0 =] False (even [n 1 -]))
-    \n.([n 0 =] True (odd [n 1 -]))) (f fst) (f snd)))
+    \n.([n 0 =] True (odd [n 1 -]))))
+
 odd = (f fst)
 even = (f snd)
 
-main = [putStrLn showBool odd 100]
+main = [putStrLn showBool odd readInt head getArgs]

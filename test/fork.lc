@@ -1,1 +1,3 @@
-main = (putStrLn (fork 0 (0 =) "Child says hi" "Parent says hi"))
+main = (if (fork 0 (0 =))
+  (print "Child says hi") 
+  (print "Parent says hi"))

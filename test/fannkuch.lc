@@ -9,7 +9,7 @@ n = [readInt head getArgs]
 ps = [perms (range 1) n]
 
 main = [
-  [putStr unlines [map concatMap showInt] (take 30) ps]
+  [putStr unlines [map concatMap showInt] (take 30) ps] 
   then 
   [putStrLn (printf "Pfannkuchen(%d) = %d" n (fannuch ps))]
 ]
