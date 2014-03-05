@@ -1,1 +1,1 @@
-[putStrLn showInt sum "Chars can be numbers!"]
+main = [putStrLn showInt sum "Chars are just numbers!"]

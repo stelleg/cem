@@ -1,3 +1,4 @@
+main = 
 (\plus. 
   (\three.
     (\four.

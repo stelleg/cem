@@ -2,5 +2,4 @@ tuple = \t.(t "Hello" " world" " how" " are" " you?")
 
 world = (index 5 2)
 
-[putStrLn tuple world]
-
+main = [putStrLn tuple world]

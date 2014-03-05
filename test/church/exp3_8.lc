@@ -1,2 +1,2 @@
 power = [church readInt head getArgs]
-[putStrLn showInt unchurch (pow (church 3) power)]
+main = [putStrLn showInt unchurch (pow (church 3) power)]

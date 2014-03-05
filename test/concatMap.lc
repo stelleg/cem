@@ -1,1 +1,1 @@
-(putStrLn (concatMap \x.(Cons x Nil) "Hello concatMap"))
+main = (putStrLn (concatMap \x.(Cons x Nil) "Hello concatMap"))

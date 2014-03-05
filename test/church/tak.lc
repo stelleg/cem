@@ -4,4 +4,4 @@ tak = (Y \tak.\x.\y.\z.(lte x y
        (tak (pred y) z x)
        (tak (pred z) x y))))
 
-[putStrLn showInt unchurch (tak (church 14) (church 7) zero)]
+main = [putStrLn showInt unchurch (tak (church 14) (church 7) zero)]

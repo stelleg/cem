@@ -1,1 +1,1 @@
-[putStrLn showBool iszero zero]
+main = [putStrLn showBool iszero zero]

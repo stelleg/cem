@@ -2,4 +2,4 @@ printi = (Y \printi.\acc.\l.(l (putStrLn acc) \h.\t.([h '#' =]
   \i.(printi (append acc (showInt i)) t)
   (printi (append acc (Cons h Nil)) t))) Nil)
 
-(printi "int1: #, int2: #" 3 4)
+main = (printi "int1: #, int2: #" 3 4)

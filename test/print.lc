@@ -1,3 +1,0 @@
-main = [putStr "Hello world\n"]
-
-(main)

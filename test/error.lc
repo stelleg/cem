@@ -1,1 +1,1 @@
-(error "Failed!")
+main = (error "Failed!")

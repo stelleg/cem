@@ -56,16 +56,19 @@ instance Show (DBExpr) where
   show (Op o) = show o
 
 -- INPUT
-word = (:) <$> letter <*> many (satisfy $ \c-> not (isSpace c || elem c ".()[]={}"))
+word = (:) <$> letter <*> many (satisfy $ \c-> not (isSpace c || elem c "\\.()[]={}"))
 literal = (read <$> many1 digit) :: Parser Int
 
 comment = char '#' >> skipMany (noneOf "\n") >> char '\n'
-notCode = many ((comment <|> space) >> notCode) >> return ()
+notCode = ((comment <|> space) >> notCode) <|> return ()
 
 pa <^> pb = pa <* notCode <*> pb 
 pa ^> pb  = (pa >> notCode) *> pb
 pa <^ pb  = pa <* (notCode >> pb)
 infixl 4 <^>, <^, ^>
+
+parseProgram :: String -> SExpr 
+parseProgram s = parseSource lc $ "{" ++ s ++ "}" ++ "main"
 
 parseSource :: Parser SExpr -> String -> SExpr
 parseSource p src = either (error.show) id . parse p "" $ src
@@ -79,9 +82,10 @@ lc =  Lam <$> ((char '\\' <|> char 'λ') *> word <* char '.') <^> lc
   <|> char '[' ^> (foldr1 App <$> many1 (notCode *> lc <* notCode)) <^ char ']'
   <|> char '\'' *> charLit <* char '\''
   <|> char '\"' *> (foldr (\h t -> App (App cons h) t) nil <$> many charLit) <* char '\"'
-
-sugar = (mylet <$> word <^ char '=' <^> lc <^> sugar) <|> lc
-  where mylet var val body = App (Lam var body) val
+  <|> char '{' ^> (lets <$> many1 (notCode *> binding <* notCode) <^> (char '}' ^> lc))
+      where lets = flip $ foldr ($) 
+            binding = mylet <$> word <^> (char '=' ^> lc)
+            mylet var term body = App (Lam var body) term
 
 op = do
   opstr <- (:) <$> oneOf "+-*/=<>%@;$!" <*> many (oneOf "+-*/=<>%@;$!qlbs")
@@ -113,7 +117,7 @@ wordSizeChar c = case c of
   'q' -> Word64
 
 -- Useful expressions
-defParse = parseSource sugar
+defParse = parseSource lc
 
 cons = defParse "\\h.\\t.\\n.\\c.(c h t)"
 nil = defParse "\\n.\\c.n"

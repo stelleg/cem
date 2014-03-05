@@ -1,1 +1,1 @@
-[putStrLn showInt signum 10]
+main = [putStrLn showInt signum 10]

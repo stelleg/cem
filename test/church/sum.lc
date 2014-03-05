@@ -1,1 +1,1 @@
-[putStrLn showInt unchurch (foldr add zero) (map church) (range 1 40)]
+main = [putStrLn showInt unchurch (foldr add zero) (map church) (range 1 40)]

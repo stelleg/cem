@@ -37,4 +37,3 @@ bindings followed by an `lc` expression.
 - GC doesn't grow heap when needed, default large (400M)
 - `writeFd` and `readFd` max out at a single page size, to read or write more
   must use multiple calls
-- No syntax support for nested lets

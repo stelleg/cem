@@ -2,4 +2,4 @@ sqrt1 = \n.(Y \loop.\a.\s.\t.([s n <=]
   (\t1.(loop [a 1 +] t1 [s t1 +]) [t 2 +])
   a) 0 1 1)
 
-[putStrLn showInt sqrt1 25]
+main = [putStrLn showInt sqrt1 25]

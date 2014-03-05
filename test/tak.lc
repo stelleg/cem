@@ -3,4 +3,4 @@ tak = (Y \tak.\x.\y.\z.(not [y x <] z
          (tak [y 1 -] z x)
          (tak [z 1 -] x y))))
 
-[putStrLn showInt (applyFromList tak) (map readInt) (take 3) getArgs]
+main = [putStrLn showInt (applyFromList tak) (map readInt) (take 3) getArgs]

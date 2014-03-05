@@ -1,3 +1,0 @@
-(\iszero.
-  (iszero \f.\x.(f x))
-\n.((n \x.\x.\y.y) \x.\y.x))

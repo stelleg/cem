@@ -4,4 +4,4 @@ f = (Y \f.(\odd.\even.\p.(p
 odd = (f fst)
 even = (f snd)
 
-[putStrLn showBool odd 100]
+main = [putStrLn showBool odd 100]

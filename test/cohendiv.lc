@@ -4,5 +4,5 @@ cohendiv = \x.\y.(Y \ol.\q.\r.([r y >=]
     \p.(p a b)) 1 y \a.\b.(ol [q a +] [r b -]))
   q) 0 x)
 
-[putStrLn showInt (cohendiv 50 5)]
+main = [putStrLn showInt (cohendiv 50 5)]
 

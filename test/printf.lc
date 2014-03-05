@@ -1,4 +1,3 @@
-(putStrLn (printf "%d is an int, \'%c\' is a char, and \"%s\" is a string" 
-  3 
-  'G'
-  "Hello world"))
+string = (printf "%d, %c, %s" 3 'G' "ohi")
+
+main = [putStrLn string]

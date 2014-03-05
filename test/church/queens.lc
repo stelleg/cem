@@ -8,4 +8,4 @@ safe = (Y \safe.\x.\d.\qs.(qs True
 gen = (Y \gen.\n.(iszero n (Cons Nil Nil) (concatMap \b.(concatMap \q.(safe q (church 1) b 
   (Cons (Cons q b) Nil) Nil) range) (gen (pred n)))))
 
-[putStrLn showInt length gen (church nq)]
+main = [putStrLn showInt length gen (church nq)]

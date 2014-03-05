@@ -1,1 +1,1 @@
-[putStrLn showBool (lte (church 4) (church 3))]
+main = [putStrLn showBool (lte (church 4) (church 3))]

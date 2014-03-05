@@ -2,4 +2,4 @@ divs = \n.\x.[[x n %] 0 /=]
 thefilter = \l.(filter [divs head l] (tail l))
 primes = (map head (iterate thefilter (iterate \x.[x 1 +] 2)))
 
-[putStrLn showInt (listIndex [readInt head getArgs] primes)]
+main = [putStrLn showInt (listIndex [readInt head getArgs] primes)]

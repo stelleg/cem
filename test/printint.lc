@@ -1,1 +1,1 @@
-[putStrLn showInt 586]
+main = [putStrLn showInt 586]

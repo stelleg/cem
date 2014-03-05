@@ -1,1 +1,1 @@
-[putStrLn showInt unchurch (mod (church 35) (church 6))]
+main = [putStrLn showInt unchurch (mod (church 35) (church 6))]

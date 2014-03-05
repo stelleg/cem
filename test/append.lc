@@ -1,1 +1,1 @@
-(putStrLn (append "Hello" " world"))
+main = (putStrLn (append "Hello" " world"))

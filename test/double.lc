@@ -1,3 +1,4 @@
+main = 
 (\double.
   (double 5)  
 \x.(x (x +)))

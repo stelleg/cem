@@ -1,1 +1,1 @@
-[putStrLn showInt '\n']
+main = [putStrLn showInt '\n']

@@ -1,3 +1,3 @@
-(\sub.
+main = (\sub.
   (sub 6 3)
 \x.\y.(x (y -)))

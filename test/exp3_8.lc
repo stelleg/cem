@@ -9,4 +9,4 @@ pow = (Y \pow.\x.\y.(y (S Z) \y.(mul x (pow x y))))
 
 power = [nat readInt head getArgs]
 
-[putStrLn showInt int (pow (nat 3) power)]
+main = [putStrLn showInt int (pow (nat 3) power)]

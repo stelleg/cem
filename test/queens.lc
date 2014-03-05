@@ -7,4 +7,4 @@ safe = (Y \safe.\x.\d.\qs.(qs True
 gen = (Y \gen.\n.([0 n =] (Cons Nil Nil) (concatMap \b.(concatMap \q.(safe q 1 b 
   (Cons (Cons q b) Nil) Nil) (range 1 nq)) (gen [n 1 -]))))
 
-[putStrLn showInt length gen nq]
+main = [putStrLn showInt length gen nq]

@@ -14,4 +14,4 @@ toDigits = (Y \toDigits.\l.(l (error "Pattern match")
 
 e = (toDigits eContFrac)
 
-[putStrLn [take readInt head getArgs] (concatMap showInt) e]
+main = [putStrLn [take readInt head getArgs] (concatMap showInt) e]

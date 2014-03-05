@@ -1,1 +1,1 @@
-(putStr "Hello world\n")
+main = (putStr "Hello world\n")

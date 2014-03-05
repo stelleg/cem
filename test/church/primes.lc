@@ -2,4 +2,4 @@ divs = \n.\x.[not iszero (mod x n)]
 thefilter = \l.(l (error "empty list") \n.\ns.(filter (divs n) ns))
 primes = (map head (iterate thefilter (iterate succ (church 2))))
 
-[putStrLn showInt unchurch (listIndex [readInt head getArgs] primes)]
+main = [putStrLn showInt unchurch (listIndex [readInt head getArgs] primes)]

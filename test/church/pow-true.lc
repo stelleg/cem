@@ -1,4 +1,4 @@
-[
+main = [
   putStrLn showBool iszero 
     (sub (pow (church 7) (church 5)) 
          (pow (church 7) (church 5)))
