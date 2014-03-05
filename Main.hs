@@ -10,7 +10,7 @@ import Control.Applicative
 import System.Exit
 import qualified Data.Map as M
 
-cemDir = "/home/george/cem/"
+cemDir = "/home/gwstell/cem/"
 libs = map (cemDir ++) ["lib/prelude.lc", "lib/os.lc", "lib/church.lc"]
 
 parseArgs :: [String] -> IO ()
@@ -57,7 +57,9 @@ freevars :: String -> IO ()
 freevars s = print $ A.fv $ A.labeled $ IO.parseProgram s
 
 compile :: String -> String -> IO ()
-compile filename s = native filename (toDeBruijn e) e where e = Lam "argc" $ Lam "argv" $ IO.parseProgram s
+compile filename s = do
+  writeFile "/tmp/prog.lc" s
+  native filename (toDeBruijn e) e where e = Lam "argc" $ Lam "argv" $ IO.parseProgram s
 
 toDeBruijn :: SExpr -> DBExpr
 toDeBruijn expr = either (\v->error$"free var: "++v) id $ deBruijn [] expr 

@@ -1,37 +1,35 @@
-# rip : code
-# rax : env
-# rbx : freeEnv
-# rcx ; stack bottom
-# rsi : envStart
-# rdi : envEnd
-# rbp : [rdi, rsi, r8 ..]
-# rdx,r8-r16 : tmps
+# r15 : code
+# r14 : env
+# r13 : stack
+# r12 : stack bottom
+# r11 : freeEnv
+# r0-r3 : tmps
 
 .macro APP ind code
 \ind:
-  push %rax
+  push r14
   push $\code
 .endm
 
 .macro LAM ind 
 \ind:
-  cmp %rsp, %rbp
+  cmp r13, r12
   je exit_failure
-  cmp $0, (%rsp)
+  cmp $0, (r13)
   jne noupdate_\ind
-  movq 8(%rsp), %rcx
-  movq $\ind, (%rcx)
-  movq %rax, 8(%rcx)
-  add $16, %rsp
+  mov r3, 8(r13)
+  mov (r3), $\ind
+  mov 8(r3), r14
+  add $16, r13
   jmp \ind # TODO: remove if collapsed markers
 noupdate_\ind:
-  movq (%rbx), %rcx
-  pop (%rbx)
-  pop 8(%rbx)
-  movq %rax, 16(%rbx)
-  movq %rbx, %rax
-  mov %rcx, %rbx
-  cmp $0, %rbx
+  mov r3, (r11)
+  pop (r11)
+  pop 8(r11)
+  mov 16(r11), r14
+  mov r14, r11
+  mov r11, r3
+  cmp $0, r11
   jne no_gc_\ind
   call gc
 no_gc_\ind:
@@ -39,13 +37,13 @@ no_gc_\ind:
 
 .macro VAR ind var
 \ind:
-  movq $\var, %rcx
+  mov r3, $\var
   jmp enter
 .endm
 
 .macro CONST ind i
 \ind:
-  movq $\i, %rax
+  mov r14, $\i
   jmp lit
 .endm
 
@@ -58,145 +56,145 @@ no_gc_\ind:
   .global _start
 
 enter: 
-  cmp $0, %rcx
+  cmp $0, r3
   je enter_end
-  movq 16(%rax), %rax 
-  dec %rcx
+  mov r14, 16(r14) 
+  dec r3
   jmp enter
 enter_end:
-  push %rax
+  push r14
   push $0
-  movq (%rax), %rcx
-  movq 8(%rax), %rax
-  jmp *%rcx
+  mov r3, (r14)
+  mov r14, 8(r14)
+  jmp *r3
 
 exit_failure:
-  movq $-1, %rdi
-  movq $60, %rax
-  syscall
+  mov r0, $-1
+  mov r7, $60
+  swi $0
 
 exit:
-  movq %rax, %rdi
-  movq $60, %rax
-  syscall
+  mov r0, r14
+  mov r14, $60
+  swi $0
 
 lit:
-  cmp %rsp, %rbp
+  cmp r13, r12
   je exit
-  cmp $0, (%rsp)
+  cmp $0, (r13)
   jne noupdate_lit
-  movq 8(%rsp), %rcx
-  movq $lit, (%rcx)
-  movq %rax, 8(%rcx)
-  add $16, %rsp
+  mov r3, 8(r13)
+  mov (r3), $lit
+  mov 8(r3), r14
+  add $16, r13
   jmp lit
 noupdate_lit:
-  movq (%rsp), %rcx
-  movq 8(%rsp), %rdx
-  movq $lit, (%rsp)
-  movq %rax, 8(%rsp) 
-  movq %rdx, %rax
-  jmp *%rcx
+  mov r3, (r13)
+  mov r2, 8(r13)
+  mov (r13), $lit
+  mov 8(r13), r14 
+  mov r14, r2
+  jmp *r3
 
 op_add:
-  movq 8(%rsp), %rcx
-  movq 24(%rsp), %rax
-  add %rcx, %rax
-  add $32, %rsp
+  mov r3, 8(r13)
+  mov r14, 24(r13)
+  add r3, r14
+  add $32, r13
   jmp lit
 
 op_sub:
-  movq 8(%rsp), %rcx
-  movq 24(%rsp), %rax
-  sub %rcx, %rax
-  add $32, %rsp
+  mov r3, 8(r13)
+  mov r14, 24(r13)
+  sub r3, r14
+  add $32, r13
   jmp lit
 
 op_mul:
-  movq 8(%rsp), %rdx
-  movq 24(%rsp), %rax
-  mul %rdx
-  add $32, %rsp
+  mov r2, 8(r13)
+  mov r14, 24(r13)
+  mul r2
+  add $32, r13
   jmp lit
 
 op_div:
-  movq $0,%rdx
-  movq 24(%rsp), %rax
-  divq 8(%rsp)
-  add $32, %rsp
+  mov r2, $0
+  mov r14, 24(r13)
+  divq 8(r13)
+  add $32, r13
   jmp lit
 
 op_mod:
-  movq $0,%rdx
-  movq 24(%rsp), %rax
-  divq 8(%rsp)
-  mov %rdx, %rax
-  add $32, %rsp
+  mov r2, $0
+  mov r14, 24(r13)
+  divq 8(r13)
+  mov r14, r2
+  add $32, r13
   jmp lit
 
 op_eq:
-  movq 8(%rsp), %rcx
-  movq 24(%rsp), %rax
-  add $32, %rsp
-  cmp %rcx, %rax
+  mov r3, 8(r13)
+  mov r14, 24(r13)
+  add $32, r13
+  cmp r3, r14
   je true
   jmp false
 
 op_lt:
-  movq 8(%rsp), %rcx
-  movq 24(%rsp), %rax
-  add $32, %rsp
-  cmp %rcx, %rax
+  mov r3, 8(r13)
+  mov r14, 24(r13)
+  add $32, r13
+  cmp r3, r14
   jl true
   jmp false
 
 op_lte:
-  movq 8(%rsp), %rcx
-  movq 24(%rsp), %rax
-  add $32, %rsp
-  cmp %rcx, %rax
+  mov r3, 8(r13)
+  mov r14, 24(r13)
+  add $32, r13
+  cmp r3, r14
   jle true
   jmp false
 
 op_gt:
-  movq 8(%rsp), %rcx
-  movq 24(%rsp), %rax
-  add $32, %rsp
-  cmp %rcx, %rax
+  mov r3, 8(r13)
+  mov r14, 24(r13)
+  add $32, r13
+  cmp r3, r14
   jg true 
   jmp false 
 
 op_gte:
-  movq 8(%rsp), %rcx
-  movq 24(%rsp), %rax
-  add $32, %rsp
-  cmp %rcx, %rax
+  mov r3, 8(r13)
+  mov r14, 24(r13)
+  add $32, r13
+  cmp r3, r14
   jge true 
   jmp false 
 
 op_write:
-  leaq 8(%rsp), %rsi 
-  movq $1, %rdi
-  movq $1, %rdx
-  movq $1, %rax
-  syscall 
-  add $16, %rsp
+  leaq 8(r13), r1 
+  mov r0, $1
+  mov r2, $1
+  mov r14, $1
+  swi $0 
+  add $16, r13
   jmp lit 
 
 op_read:
   pushq $0
   push $lit
-  leaq 8(%rsp), %rsi
-  movq $0, %rdi
-  movq $0, %rax
-  movq $1, %rdx
-  syscall 
-  movq 16(%rsp), %rcx
-  movq 24(%rsp), %rdx
-  movq $lit, 16(%rsp)
-  movq %rax, 24(%rsp)
-  movq %rdx, %rax
-  jmp *%rcx
+  leaq 8(r13), r1
+  mov r0, $0
+  mov r14, $0
+  mov r2, $1
+  swi $0 
+  mov r3, 16(r13)
+  mov r2, 24(r13)
+  mov 16(r13), $lit
+  mov 24(r13), r14
+  mov r14, r2
+  jmp *r3
   
 true:
   LAM lamtrue1
@@ -208,44 +206,33 @@ false:
   LAM lamfalse2
   VAR varfalse 0
 
-op_alloc:
-  movq $0, %rdi
-  pop %rsi
-  mov $255, %rdx
-  movq $0x22, %r10
-  movq $-1, %r8
-  movq $0, %r9
-  movq $9, %rax
-  syscall
-  jmp lit
-
 alloc_heap:
-  movq $0, %rdi
-  mov $255, %rdx
-  movq $0x22, %r10
-  movq $-1, %r8
-  movq $0, %r9
-  movq $9, %rax
-  syscall
-  movq %rax, %rbx
-  movq %rax, %rdx
-  lea -24(%rax), %rdi
-  add %rsi, %rdi
-  mov %rax, %rsi
+  mov r0, $0
+  mov r1, $0x100000
+  mov r2, $255
+  mov r3, $0x22
+  mov r4, $-1
+  mov r5, $0
+  mov r7, $9
+  swi $0
+  mov r11, r0
+  mov r2, r0
+  sub r0, 24, r0
+  add r0, r1
+  mov r1, r0
 freeHeap_loop:
-  add $24, %rdx
-  cmp %rdx, %rdi
-  jb  alloc_heap_ret
-  mov %rdx, -24(%rdx)
+  add r2, r2, 24
+  cmp r2, r0
+  bhi alloc_heap_ret
+  mov -24(r2), r2
   jmp freeHeap_loop
 alloc_heap_ret:
   ret
 
 _start:
   # mmap call
-  movq $0x100000, %rsi
   call alloc_heap 
-  movq %rsp, %rbp
+  mov r12, r13
 
 /*
   APP L0 L5

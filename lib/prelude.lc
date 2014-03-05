@@ -17,6 +17,7 @@ Left = \v.\l.\r.(l v)
 Right = \v.\l.\r.(r v)
 Cons = \h.\t.\n.\c.(c h t)
 Nil = True
+nil? = \l.(l True \h.\t.False)
 Pair = \f.\s.\p.(p f s)
 gcd = (Y \gcd.\a.\b.([b 0 =] a (gcd b [a b %])))
 lcm = \a.\b.(div [a b *] (gcd a b))
