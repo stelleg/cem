@@ -7,8 +7,15 @@ use of assembly macros.
 # Building
     make
 
+# Installing
+    cabal install
+or 
+    make install
+
+Make sure ~/.cabal/bin/ is in your PATH variable.
+
 # Usage
-    cem {options} test/testfile.lc
+    cem {options} file.lc
 
 # Examples
     cem test/hello.lc # compiles hello world program in test/
@@ -16,7 +23,7 @@ use of assembly macros.
     cem -ld test/hello.lc
 
 # Flags
-`-l` before anything uses the libraries: `lib/prelude.lc` `lib/os.lc` `lib/church.lc`
+`-l` Put before any other flag, uses the libraries: `lib/prelude.lc` `lib/os.lc` `lib/church.lc`
 `-t`: Trace. Dumps term for every machine step. Useful for debugging.
 `-r`: Runs in virtual machine.
 `-g`: Visualization tool. Also probably want to use without libs.
