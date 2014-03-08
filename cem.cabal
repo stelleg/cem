@@ -1,0 +1,111 @@
+name: cem
+version: 0.1
+cabal-version: >=1.10
+build-type: Simple
+license: GPL-2
+copyright: (c) 2014 George Stelle
+author: George Stelle <stelleg@gmail.com>
+maintainer: George Stelle <stelleg@gmail.com>
+category: Compilers
+synopsis: A simple lambda calculus compiler built on the Cactus Environment Machine.
+extra-source-files:
+  README.md
+  Makefile
+  test/add.lc
+  test/append.lc
+  test/caps.lc
+  test/capsinteract.lc
+  test/cat.lc
+  test/charval.lc
+  test/cohendiv.lc
+  test/compose.lc
+  test/concat.lc
+  test/concatMap.lc
+  test/dataCon.lc
+  test/digits-of-e1.lc
+  test/digits-of-e2.lc
+  test/div.lc
+  test/double.lc
+  test/efficient.lc
+  test/eq.lc
+  test/eqplus.lc
+  test/error.lc
+  test/exitcall.lc
+  test/exp3_8.lc
+  test/expexp.lc
+  test/fact.lc
+  test/factfib.lc
+  test/fannkuch.lc
+  test/fib.lc
+  test/filter.lc
+  test/foldr.lc
+  test/fork.lc
+  test/forkmore.lc
+  test/from.lc
+  test/gcd.lc
+  test/hello.lc
+  test/ifthenelse.lc
+  test/infix.lc
+  test/interact.lc
+  test/lcm.lc
+  test/le.lc
+  test/length.lc
+  test/malloc.lc
+  test/mmap.lc
+  test/mod.lc
+  test/mult.lc
+  test/mutualrec.lc
+  test/not.lc
+  test/plus-true.lc
+  test/primes.lc
+  test/printCharInts.lc
+  test/printf.lc
+  test/printi.lc
+  test/printint.lc
+  test/putStr.lc
+  test/putStrLn.lc
+  test/queens.lc
+  test/quoteVar.lc
+  test/range.lc
+  test/seive.lc
+  test/sequence.lc
+  test/signum.lc
+  test/sleep.lc
+  test/sqrt1.lc
+  test/string.lc
+  test/sub.lc
+  test/substring.lc
+  test/sum.lc
+  test/tak.lc
+  test/take.lc
+  test/takeWhile.lc
+  test/tuple.lc
+  test/writeFile.lc
+
+data-files:
+  native/x64.s
+  native/gc-x64.s
+  lib/prelude.lc
+  lib/os.lc
+  lib/church.lc
+
+source-repository head
+  type:     git
+  location: git://stell.es/cem.git
+
+
+executable cem
+  main-is: Main.hs
+  default-extensions: LambdaCase TupleSections
+  other-modules: Paths_cem
+  build-depends: process,
+                 base >= 4.6.0.1,
+                 graphviz >= 2999.16.0.0,
+                 parsec >= 3.1.5,
+                 containers,
+                 mtl,
+                 bytestring,
+                 text,
+                 storable
+  buildable: True
+  default-language: Haskell2010
