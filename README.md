@@ -4,9 +4,6 @@
 Edit `cemDir` variable in `Main.hs` to point to build directory.  Needed for
 use of assembly macros.
 
-# Building
-    make
-
 # Installing
     cabal install
 or 
