@@ -27,7 +27,7 @@ parseOpts "a" sources = cfa =<< readSources sources
 parseOpts "c" sources = compile (takeWhile (/='.') . last $ sources) =<< readSources sources
 parseOpts "f" sources = freevars =<< readSources sources
 parseOpts "g" sources = graph =<< readSources sources
-parseOpts "s" sources = partial (\s->return()) =<< readSources sources 
+parseOpts "r" sources = partial (\s->return()) =<< readSources sources 
 parseOpts "t" sources = partial (\((c,e),h,s)->print c) =<< readSources sources
 parseOpts _ _ = usage
 
