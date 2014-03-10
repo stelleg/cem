@@ -1,0 +1,4 @@
+main = [
+  [putStr getLine nil] then
+  [putStr getLine nil]
+]

@@ -74,3 +74,4 @@ unlines = (concatMap (flip append "\n"))
 applyFromList = (Y \al.\f.\l.(l f \h.\t.(al (f h) t))) 
 signum = \n.[([n 0 =] 0) ([n 0 >] 1) [0 1 -]]
 abs = \n.([n 0 <] [[0 1 -] n *] n)
+nil = 0

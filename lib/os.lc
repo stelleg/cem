@@ -41,10 +41,8 @@ readStrBuf = (Y \rstr.\loc.\n.([n 0 <=]
   {c = (rdb loc)} ([c 0 =] Nil (Cons c (rstr [loc 1 +] [n 1 -])))))
 writeFd = \fd.\str.{iobuf = (newPage 0)} (Y \writeFd.\str.[
   (putStrBuf pageSize iobuf str) \p.\s.
-  (write fd iobuf [p iobuf -] \n.[
-  (s n \h.\t.(writeFd s)) then
-  (free iobuf)])
-] str)
+  (write fd iobuf [p iobuf -] \n.(s n \h.\t.(writeFd s)))
+] str \n.(free iobuf \r.n))
 writeFile = \fname.\str.{iobuf = (newPage 0)}[
   (putStrBuf pageSize iobuf fname) \c.\p.\s.c
   (open iobuf 577 420 \fd.
