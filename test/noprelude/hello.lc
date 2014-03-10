@@ -11,17 +11,15 @@ pageSize = 4096
 malloc = \len.(mmap 0 len 255 34 [0 1 -] 0)
 free = \ptr.(munmap ptr 1)
 newPage = \w.(malloc pageSize \ptr.([ptr 0 <=] (exit 1) ptr))
-putStrBuf = \size.\buf.(Y \putStrBuf.\loc.\s.{finished = (Pair loc s)} (s
+putStrBuf = \size.\buf.(Y \putStrBuf.\loc.\str.{finished = (Pair loc str)} (str
   finished 
   \h.\t.([[loc buf -] size >=]
     finished 
     ([h loc @b] (putStrBuf [loc 1 +] t)))) buf) 
-writeFd = \fd.{iobuf = (newPage 0)} (Y \writeFd.\str.[
+writeFd = \fd.\str.{iobuf = (newPage 0)} (Y \writeFd.\str.[
   (putStrBuf pageSize iobuf str) \p.\s.
-  (write fd iobuf [p iobuf -] \n.[
-  (s n \h.\t.(writeFd s)) then
-  (free iobuf) then n])
-])
+  (write fd iobuf [p iobuf -] \n.(s n \h.\t.(writeFd s)))
+] str \n.(free iobuf \r.n))
 print = (writeFd 1)
 
 main = (print "Hello world\n")

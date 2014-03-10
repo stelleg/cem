@@ -119,6 +119,8 @@ wordSizeChar c = case c of
 -- Useful expressions
 defParse = parseSource lc
 
+lid = defParse "\\x.x"
+
 cons = defParse "\\h.\\t.\\n.\\c.(c h t)"
 nil = defParse "\\n.\\c.n"
 
@@ -182,18 +184,20 @@ toMacro n i s = case i of
 syscallregs = ["%rdi", "%rsi", "%rdx", "%r10", "%r8", "%r9"]
 
 compile :: DBExpr -> [Instr]
-compile (Lam _ e) | bound 0 e == 0 = POP : compile (dec 0 e)
+--compile (Lam _ e) | bound 0 e == 0 = POP : compile (dec 0 e)
 compile (Lam _ e)  = TAKE : compile e
 compile (Var i)    = [ENTER i]
 compile (App m n)  = PUSH (length ms + 1) : ms ++ compile n where ms = compile m
 compile (Lit l)    = [LIT l]
 compile (Op o)     = [OP o]
 
+bound :: Int -> DBExpr -> Int
 bound i (Lam _ e) = bound (i+1) e
 bound i (Var i') = if i == i' then 1 else 0
 bound i (App m n) = bound i m + bound i n
 bound i _ = 0
 
+dec :: Int -> DBExpr -> DBExpr
 dec i (Lam _ e) = Lam () (dec (i+1) e)
 dec i (Var i') | i' == i = error "POP opt failed"
                | i' > i = Var (i'-1)

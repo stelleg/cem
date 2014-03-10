@@ -32,7 +32,7 @@ putStrBuf = \size.\buf.(Y \putStrBuf.\loc.\s.(s
   (Pair loc Nil)
   \h.\t.([[loc buf -] size >=]
     (Pair loc s)
-    ([h loc @b] (putStrBuf [loc 1 +] t)))) buf) 
+    ([h loc @b] (putStrBuf [loc 1 +] t)))) buf)
 readPtrBuf = (Y \rstr.\loc.\n.([n 0 <=] 
   Nil 
   ((rd loc Cons (rstr [loc 8 +] [n 1 -])))))
@@ -51,7 +51,7 @@ writeFile = \fname.\str.{iobuf = (newPage 0)}[
   ([fd 1024 >] (exit 2) (writeFd fd str) \n.
   (free iobuf)))
 ]
-readFd = \fd.{iobuf = (newPage 0)}[
+readFd = \fd.{iobuf = (newPage 0)}\w.[
   (read fd iobuf pageSize) \n.
   (readStrBuf iobuf n)
 ]
@@ -64,8 +64,8 @@ readFile = \fname.\str.{iobuf = (newPage 0)}[
 putStr = (writeFd 1)
 putStrLn = \s.(writeFd 1 (append s "\n"))
 print = putStrLn
-getContents = (readFd 0)
-getLine = (takeWhile \c.[c '\n' /=]  getContents)
+getContents = (readFd 0 0)
+getLine = \w.(readFd 0 w)
 interact = \f.[putStr f getContents]
 getArgs = [tail (map (flip readStrBuf 1024)) (readPtrBuf argv argc)]
 

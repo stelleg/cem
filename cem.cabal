@@ -93,7 +93,6 @@ source-repository head
   type:     git
   location: git://stell.es/cem.git
 
-
 executable cem
   main-is: Main.hs
   default-extensions: LambdaCase TupleSections

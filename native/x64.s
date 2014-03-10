@@ -93,12 +93,6 @@ enter_end_\ind:
   movq 8(%rax), %rax
   movq $0, %r12
   jmp *%r13
-entered_\ind:
-  cmp $0, %r12
-  je \ind
-  push %r12
-  push $0
-  jmp \ind
 .endm
 
 .macro VALUE ind val
@@ -241,6 +235,7 @@ true_\ind:
 .endm
 
 .macro OP_SYSCALL ind
+\ind:
   movq 8(%rax), %rax 
   syscall
   LIT syscall_lit_\ind
@@ -258,6 +253,7 @@ entered_\ind:
   movq %rdi, (%rsi)
   addq $16, %rsp
   movq -8(%rsp), %rax
+  movq $0, %r12
   jmp *-16(%rsp)
 .endm
 
@@ -273,6 +269,7 @@ entered_\ind:
   movl %edi, (%rsi)
   addq $16, %rsp
   movq -8(%rsp), %rax
+  movq $0, %r12
   jmp *-16(%rsp)
 .endm
 
@@ -288,6 +285,7 @@ entered_\ind:
   mov %di, (%rsi)
   addq $16, %rsp
   movq -8(%rsp), %rax
+  movq $0, %r12
   jmp *-16(%rsp)
 .endm
 
@@ -303,6 +301,7 @@ entered_\ind:
   movb %dil, (%rsi)
   addq $16, %rsp
   movq -8(%rsp), %rax
+  movq $0, %r12
   jmp *-16(%rsp)
 .endm
 
