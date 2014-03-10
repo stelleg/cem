@@ -3,3 +3,4 @@ test/**
 !test/**.lc
 test/*
 !test/*.lc
+!test/Makefile
