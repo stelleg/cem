@@ -1,1 +1,5 @@
+then = id 
+else = id
+if = \b.\then.\tc.\else.\ec.(b tc ec)
+
 main = [putStrLn showBool (if [3 1 >=] then True else False)]
