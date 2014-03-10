@@ -1,9 +1,14 @@
 all: cem
 
 cem: *.hs
-	ghc -O2 -rtsopts -XLambdaCase -XTupleSections Main.hs -o cem
+	cabal configure 
+	cabal build
+
+install: 
+	cabal install
 
 clean: 
+	rm -rf dist
 	find -type f \( \
 		-iname "*.o" -or \
 		-iname "*.hi" -or \

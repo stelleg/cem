@@ -1,5 +1,6 @@
 import System.Environment as SE
-import System.Process (callCommand)
+import System.Cmd (system)
+import Paths_cem (getDataFileName)
 import Text.ParserCombinators.Parsec hiding (label)
 import qualified IO
 import qualified VM
@@ -10,17 +11,16 @@ import Control.Applicative
 import System.Exit
 import qualified Data.Map as M
 
-cemDir = "/home/gwstell/cem/"
-libs = map (cemDir ++) ["lib/prelude.lc", "lib/os.lc", "lib/church.lc"]
+libs = mapM getDataFileName ["lib/prelude.lc", "lib/os.lc", "lib/church.lc"]
 
 parseArgs :: [String] -> IO ()
 parseArgs [] = usage
-parseArgs (('-':opts):sources) = parseOpts opts sources
+parseArgs (('-':o:opts):sources) = parseOpts (o:opts) sources
 parseArgs sources = parseOpts "lc" sources
 
 parseOpts :: String -> [String] -> IO ()
 parseOpts [] [] = compile "a.out" =<< getContents
-parseOpts ('l':o) sources = parseOpts o (libs ++ sources)
+parseOpts ('l':o) sources = do srclibs <- libs; parseOpts o (srclibs ++ sources)
 parseOpts "v" _ = version
 parseOpts "h" _ = usage
 parseOpts "a" sources = cfa =<< readSources sources
@@ -67,10 +67,10 @@ toDeBruijn expr = either (\v->error$"free var: "++v) id $ deBruijn [] expr
 native :: String -> DBExpr -> SExpr -> IO ()
 native filename dbprog expr = do
   let assembly = unlines . (flip IO.toMacros (IO.debugging expr)) . IO.compile $ dbprog
-  macros <- readFile $ cemDir ++ "/native/x64.s"
-  gc <- readFile $ cemDir ++ "/native/gc-x64.s"
+  macros <- readFile =<< getDataFileName "/native/x64.s"
+  gc <- readFile =<< getDataFileName "/native/gc-x64.s"
   writeFile "/tmp/prog.s" (macros ++ assembly ++ gc)
-  callCommand $ "as /tmp/prog.s -o /tmp/prog.o; ld /tmp/prog.o -o "++ filename
+  system $ "as /tmp/prog.s -o /tmp/prog.o; ld /tmp/prog.o -o "++ filename
   return ()
 
 main = getArgs >>= parseArgs
