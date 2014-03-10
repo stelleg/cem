@@ -62,7 +62,7 @@ readFile = \fname.\str.{iobuf = (newPage 0)}[
   (free iobuf))))
 ]
 putStr = (writeFd 1)
-putStrLn = \s.(writeFd 1 s \n.[(putStr "\n") n +])
+putStrLn = \s.(writeFd 1 (append s "\n"))
 print = putStrLn
 getContents = (readFd 0)
 getLine = (takeWhile \c.[c '\n' /=]  getContents)
