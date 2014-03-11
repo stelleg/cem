@@ -77,9 +77,10 @@ unlines = (concatMap (flip append "\n"))
 applyFromList = (Y \al.\f.\l.(l f \h.\t.(al (f h) t))) 
 signum = \n.[([n 0 =] 0) ([n 0 >] 1) [0 1 -]]
 abs = \n.([n 0 <] [[0 1 -] n *] n)
-nil = 0
 zipWith = \f.(Y \zipWith.\as.\bs.(as Nil \a.\at.(bs Nil \b.\bt.
   (Cons (f a b) (zipWith at bt)))))
 zip = (zipWith Pair)
+nil = 0
+initWorld = 0
 mapm = \f.(foldr \a.\b.(f a \c.b) nil)
 strcmp = \s.\s'.(all id (zipWith \x.\y.[x y =] s s'))

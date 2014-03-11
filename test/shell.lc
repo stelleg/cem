@@ -1,5 +1,4 @@
-
-# Shell takes a line and turns it into 
+# Shell takes a line and executes it after splitting it into words
 shell = \line.(words line nil \cmd.\args.(fork nil (0 =)
     (exec cmd args \n.[(print "command not found") then (exit n)])
     (wait 0)))
@@ -10,4 +9,4 @@ getLineOrQuit = \world.(takeWhile \c.[c '\n' /=] (readFd 0 world
   \h.\t.(Cons h t)))
 
 # Loops forever on getLines and shells
-main = (forever \world.[(putStr "> ") then shell getLineOrQuit world] initworld)
+main = (forever \world.[(putStr "> ") then shell getLineOrQuit world] initWorld)
