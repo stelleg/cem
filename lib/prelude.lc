@@ -66,7 +66,9 @@ splitWhen = (Y \splitWhen.\f.\xs.(split f xs \l.\r.(r
   (l Nil \h.\t.(Cons l Nil))
   \h.\t.(Cons l (splitWhen f t)))))
 words = (splitWhen isSpace)
-unwords = [concatMap append " "]
+intersperse = \v.(Y \intersperse.\l.(l l \h.\t.(t l 
+  \h'.\t'.[(Cons h) (Cons v) intersperse t])))
+unwords = (compose concat (intersperse " "))
 if = id
 from = (iterate \x.[x 1 +])
 range = \s.\e.(take [[e s -] 1 +] (from s))
