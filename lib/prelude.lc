@@ -82,3 +82,4 @@ zipWith = \f.(Y \zipWith.\as.\bs.(as Nil \a.\at.(bs Nil \b.\bt.
   (Cons (f a b) (zipWith at bt)))))
 zip = (zipWith Pair)
 mapm = \f.(foldr \a.\b.(f a \c.b) nil)
+strcmp = \s.\s'.(all id (zipWith \x.\y.[x y =] s s'))

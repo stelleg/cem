@@ -21,6 +21,8 @@ socket = \dom.\type.\prot.[dom type prot 41 !3]
 fork = \world.[57 !0]
 nanosleep = \rqtp.\rmtp.[rqtp rmtp 35 !2]
 munmap = \addr.\len.[addr len 11 !2] 
+wait = \pid.[pid 0 0 61 !3]
+execve = \fname.\argv.\envp.[fname argv envp 59 !3]
 
 ## Basic IO ##
 pageSize = 4096
@@ -61,7 +63,7 @@ readFd = \fd.{iobuf = (newPage 0)}(Y \readFd.\w.[
 readFile = \fname.\str.{iobuf = (newPage 0)}[
   (putStrBuf pageSize iobuf fname) \p.\s.
   (open iobuf 577 420 \fd.
-  ([fd 1024 >] (exit 2) (writeFd fd str) (then
+  ([fd 1024 >] (exit 2) (readFd fd str) (then
   (free iobuf))))
 ]
 putStr = (writeFd 1)
@@ -90,4 +92,14 @@ printf = (Y \printf.\acc.\l.(l acc \h.\t.([h '%' =]
     ([h 's' =] \s.(printf (append acc s) t'))
     (error "misformed format")])
   (printf (append acc (Cons h Nil)) t))) Nil)
+putWords = (Y \putWords.\ws.\loc.(ws
+  (Pair loc Nil)
+  \w.\ws.(putStrBuf 1024 loc w
+    \loc'.\str.(putWords ws loc' \loc''.\ws.(Pair loc'' (Cons loc ws))))))
+exec = \fname.\argv.{buf = (newPage nil)}[
+  (putStrBuf pageSize buf fname) \l.\str.
+  (putWords argv l \al.\alocs.
+  (putPtrBuf al (Cons buf alocs) \l.
+  (execve buf al envp)))
+]
 

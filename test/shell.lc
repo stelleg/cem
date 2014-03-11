@@ -1,22 +1,13 @@
-sys_execve = \fname.\argv.\envp.[fname argv envp 59 !3]
-wait = \pid.[pid 0 0 61 !3]
-putWords = (Y \putWords.\ws.\loc.(ws
-  (Pair loc Nil)
-  \w.\ws.(putStrBuf 1024 loc w
-    \loc'.\str.(putWords ws loc' \loc''.\ws.(Pair loc'' (Cons loc ws))))))
-exec = \fname.\argv.{buf = (newPage nil)}[
-  (putStrBuf pageSize buf fname) \l.
-  (putWords argv l \al.\alocs.
-  (putPtrBuf al (Cons buf alocs) \l.
-  (sys_execve buf al envp)))
-]
-strcmp = \s.\s'.(all id (zipWith \x.\y.[x y =] s s'))
-shell = \l.(words l nil \h.\t.[
-  (fork nil (0 =)
-    (exec h t \n.(print (showInt n) \n'.(n (0 <)
-       [(print "command not found") then (exit 1)] 
-       (exit 0))))
-    (wait [0 1 -]))
-])
 
-main = (forever \i.[(putStr "> ") then shell getLine i] 0)
+# Shell takes a line and turns it into 
+shell = \line.(words line nil \cmd.\args.(fork nil (0 =)
+    (exec cmd args \n.[(print "command not found") then (exit n)])
+    (wait 0)))
+
+# Quits on ctrl-d (eof), otherwise returns the line
+getLineOrQuit = \world.(takeWhile \c.[c '\n' /=] (readFd 0 world
+  (error "goodbye") 
+  \h.\t.(Cons h t)))
+
+# Loops forever on getLines and shells
+main = (forever \world.[(putStr "> ") then shell getLineOrQuit world] initworld)
