@@ -59,7 +59,7 @@ freevars s = print $ A.fv $ A.labeled $ IO.parseProgram s
 compile :: String -> String -> IO ()
 compile filename s = do
   writeFile "/tmp/prog.lc" s
-  native filename (toDeBruijn e) e where e = Lam "argc" $ Lam "argv" $ IO.parseProgram s
+  native filename (toDeBruijn e) e where e = Lam "argc" $ Lam "argv" $ Lam "envp" $ IO.parseProgram s
 
 toDeBruijn :: SExpr -> DBExpr
 toDeBruijn expr = either (\v->error$"free var: "++v) id $ deBruijn [] expr 

@@ -38,7 +38,9 @@ putPtrBuf = (Y \putPtrBuf.\loc.\s.(s
   \h.\t.(mv h loc (putPtrBuf [loc 8 +] t))))
 readPtrBuf = (Y \rstr.\loc.\n.([n 0 <=] 
   Nil 
-  ((rd loc Cons (rstr [loc 8 +] [n 1 -])))))
+  (rd loc \p.(p (0 =)
+    Nil
+    (Cons p (rstr [loc 8 +] [n 1 -]))))))
 readStrBuf = (Y \rstr.\loc.\n.([n 0 <=] 
   Nil
   {c = (rdb loc)} ([c 0 =] Nil (Cons c (rstr [loc 1 +] [n 1 -])))))
@@ -69,6 +71,7 @@ getContents = (readFd 0 0)
 getLine = \w.(takeWhile \c.[c '\n' /=] (readFd 0 w))
 interact = \f.[putStr f getContents]
 getArgs = [tail (map (flip readStrBuf 1024)) (readPtrBuf argv argc)]
+getEnv = [tail (map (flip readStrBuf 1024)) (readPtrBuf envp 1024)]
 
 # Prelude-like utilities that require IO, e.g. partial functions
 error = \s.(putStrLn s exit)

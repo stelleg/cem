@@ -348,6 +348,7 @@ entered_\ind:
 .text
   .global _start
 
+LIT envp
 LIT argv
 LIT argc
 
@@ -382,10 +383,13 @@ _start:
   call alloc_heap 
   movq %rsp, %rbp
 # Push the argc and argv onto the stack
-  addq $8, %rbp
+  addq $24, %rbp
   pushq %rbp
-  subq $8, %rbp
+  pushq $envp
+  subq $16, %rbp
+  pushq %rbp
   pushq $argv
+  subq $8, %rbp
   pushq (%rbp)
   pushq $argc
   movq $0, %rax # set initial environment to null
