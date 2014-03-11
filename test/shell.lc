@@ -1,3 +1,25 @@
-shell = \l.(mapm print (words l))
+sys_execve = \fname.\argv.\envp.[fname argv envp 59 !3]
+wait = \pid.[pid 61 !1]
+putWords = (Y \putWords.\ws.\loc.(ws
+  (Pair loc Nil)
+  \w.\ws.(putStrBuf 1024 loc w
+    \loc'.\str.(putWords ws loc' \loc''.\ws.(Pair loc'' (Cons loc ws))))))
+exec = \fname.\argv.\envp.{buf = (newPage nil)}[
+  (putStrBuf pageSize buf fname) \l.
+  (putWords argv l \al.\alocs.
+  (putPtrBuf al (Cons buf alocs) \l.
+  (putWords envp l \el.\elocs.
+  (putPtrBuf el elocs \l.
+  (sys_execve buf al el)))))
+]
+strcmp = \s.\s'.(all id (zipWith \x.\y.[x y =] s s'))
 
-main = (forever \i.[shell getLine i] 0)
+shell = \l.(words l (print "type something!") \h.\t.[
+  (fork nil (0 =)
+    (exec h t Nil \n.(print (showInt n) \n'.(n (0 <)
+       [(print "command not found") then (exit 1)] 
+       (exit 0))))
+    (wait 0))
+])
+
+main = (forever \i.[(putStr "\n> ") then shell getLine i] 0)

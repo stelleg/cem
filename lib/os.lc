@@ -28,11 +28,14 @@ malloc = \len.(mmap 0 len 255 34 [0 1 -] 0)
 free = \ptr.(munmap ptr 1)
 sleep = \sec.\nsec.(malloc 2 \p.[(mvq sec p) (mvq nsec [p 8 +]) (nanosleep p p) \r.(free p \r'.r)])
 newPage = \w.(malloc pageSize \ptr.([ptr 0 <=] (exit 1) ptr))
-putStrBuf = \size.\buf.(Y \putStrBuf.\loc.\s.(s 
-  (Pair loc Nil)
+putStrBuf = \size.\buf.(Y \putStrBuf.\loc.\s.{finished = ([nil loc @b] Pair [loc 1 +] Nil)}(s
+  finished
   \h.\t.([[loc buf -] size >=]
-    (Pair loc s)
+    finished 
     ([h loc @b] (putStrBuf [loc 1 +] t)))) buf)
+putPtrBuf = (Y \putPtrBuf.\loc.\s.(s 
+  (mv nil loc [loc 8 +])
+  \h.\t.(mv h loc (putPtrBuf [loc 8 +] t))))
 readPtrBuf = (Y \rstr.\loc.\n.([n 0 <=] 
   Nil 
   ((rd loc Cons (rstr [loc 8 +] [n 1 -])))))
