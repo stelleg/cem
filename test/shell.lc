@@ -1,5 +1,5 @@
 sys_execve = \fname.\argv.\envp.[fname argv envp 59 !3]
-wait = \pid.[pid 61 !1]
+wait = \pid.[pid 0 0 61 !3]
 putWords = (Y \putWords.\ws.\loc.(ws
   (Pair loc Nil)
   \w.\ws.(putStrBuf 1024 loc w
@@ -14,12 +14,12 @@ exec = \fname.\argv.\envp.{buf = (newPage nil)}[
 ]
 strcmp = \s.\s'.(all id (zipWith \x.\y.[x y =] s s'))
 
-shell = \l.(words l (print "type something!") \h.\t.[
+shell = \l.(words l nil \h.\t.[
   (fork nil (0 =)
     (exec h t Nil \n.(print (showInt n) \n'.(n (0 <)
        [(print "command not found") then (exit 1)] 
        (exit 0))))
-    (wait 0))
+    (wait [0 1 -]))
 ])
 
-main = (forever \i.[(putStr "\n> ") then shell getLine i] 0)
+main = (forever \i.[(putStr "> ") then shell getLine i] 0)
