@@ -1,6 +1,6 @@
 # Shell takes a line and executes it after splitting it into words
 shell = \line.(words line nil \cmd.\args.(fork nil (0 =)
-  (exec cmd args \n.[(print "command not found") then (exit n)])
+  [(exec cmd args) then (error "command not found")]
   (wait 0)))
 
 # Quits on ctrl-d (eof), otherwise returns the line
