@@ -63,7 +63,7 @@ putStr = (writeFd 1)
 putStrLn = \s.(writeFd 1 (append s "\n"))
 print = putStrLn
 getContents = (readFd 0 0)
-getLine = \w.(readFd 0 w)
+getLine = \w.(takeWhile \c.[c '\n' /=] (readFd 0 w))
 interact = \f.[putStr f getContents]
 getArgs = [tail (map (flip readStrBuf 1024)) (readPtrBuf argv argc)]
 

@@ -1,0 +1,1 @@
+main = (mapm print (words "Hello world, how are you today?"))

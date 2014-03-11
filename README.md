@@ -20,12 +20,12 @@ Make sure ~/.cabal/bin/ is in your PATH variable.
     cem -ld test/hello.lc
 
 # Flags
-`-l` Put before any other flag, uses the libraries: `lib/prelude.lc` `lib/os.lc` `lib/church.lc`
-`-t`: Trace. Dumps term for every machine step. Useful for debugging.
-`-r`: Runs in virtual machine.
-`-g`: Visualization tool. Also probably want to use without libs.
-`-a`: Controlf low analysis (0CFA). Very slow, probably want to use without `-l`
-`-f`: Free variable analysis. 
+- `-l`: Put before any other flag, uses the libraries: `lib/prelude.lc` `lib/os.lc` `lib/church.lc`
+- `-t`: Trace. Dumps term for every machine step. Useful for debugging.
+- `-r`: Runs in virtual machine.
+- `-g`: Visualization tool. Also probably want to use without libs.
+- `-a`: Controlf low analysis (0CFA). Very slow, probably want to use without `-l`
+- `-f`: Free variable analysis. 
 
 # Syntax
 See `lc` and `sugar` from `IO.hs` for parser syntax. Essentially a list of let

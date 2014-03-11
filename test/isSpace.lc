@@ -1,0 +1,1 @@
+main = [print showBool isSpace '\n']

@@ -1,0 +1,1 @@
+main = (mapm \x.[print getLine x] (range 1 10))

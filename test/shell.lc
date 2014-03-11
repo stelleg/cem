@@ -1,0 +1,3 @@
+shell = \l.(mapm print (words l))
+
+main = (forever \i.[shell getLine i] 0)

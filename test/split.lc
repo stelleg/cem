@@ -1,0 +1,1 @@
+main = (split \c.[c ' ' =] "hello world" \h.\w.(print h))
