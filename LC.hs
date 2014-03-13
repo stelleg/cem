@@ -12,6 +12,7 @@ data Expr a b = Var b
               | Lam a (Expr a b)
               | Lit Literal
               | Op Op
+              | World
 
 travr :: (a -> State c (Expr a b)) 
       -> (b -> State c (Expr a b)) 

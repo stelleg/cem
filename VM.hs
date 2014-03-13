@@ -29,6 +29,7 @@ data LExpr = Var Label String
            | App Label LExpr LExpr
            | Lit Label (Maybe LC.Literal)
            | Op  Label LC.Op
+           | World Label
            | Set (S.Set LExpr)
 
 type Label = Int
@@ -49,6 +50,7 @@ label e = evalState (label' e) 0
         label' (LC.Var v) = do i<-get; modify succ; return $ Var i v
         label' (LC.Lit l) = do i<-get; modify succ; return $ Lit i (Just l)
         label' (LC.Op o) = do i<-get; modify succ; return $ Op i o 
+        label' LC.World = do i<-get; modify succ; return $ World i 
 
 vlookup v e h = maybe (error $ "unbound var: " ++ v) match (M.lookup e (snd h))
   where match (v', cl, e') = if v == v' then (cl, e) else vlookup v e' h
@@ -56,27 +58,30 @@ vlookup v e h = maybe (error $ "unbound var: " ++ v) match (M.lookup e (snd h))
 update l c h = M.insertWith (\(s,c,e) (s',c',e') -> (s',c,e')) l ("",c,-1) h
 
 cem :: CEMState -> IO CEMState
+cem (c, (n,h), Update loc:s) | isValue c = return (c, (n,update loc c h), s)
 cem ((Var i v, e), h, s) = let (cl, e') = vlookup v e h in
   return (cl, h, Update e':s)
 cem ((App i m n, e), h, s) = 
   return ((m,e),h, Closure (n,e):s)
 cem ((Lam i v e', e), (n,h), Closure c:cs) = 
   return ((e', (n+1)), (n+1, M.insert (n+1) (v,c,e) h), cs)
-cem ((Lam i v e', e), (n,h), Update loc:cs) = 
-  return ((Lam i v e', e), (n,update loc (Lam i v e', e) h), cs)
 cem ((Lit i l, e), (n,h), Closure c:cs) = 
-  return (c, (n,h), Closure ((Lit i l),e):cs)
-cem ((Lit i l, e), (n,h), Update loc:cs) = 
-  return ((Lit i l, e), (n,update loc (Lit i l, e) h), cs)
+  return (c, (n,h), Closure (Lit i l,e):cs)
+cem ((World i, e), (n,h), Closure c:cs) = 
+  return (c, (n,h), Closure (World i,e):cs)
 cem ((Op i o, e), h, cs) = (\(t, cs') -> ((t, e), h, cs')) <$> 
   case o of     
     LC.Syscall n -> (,drop (n+1) cs) . Lit i . Just <$> syscall n t [i | Closure (Lit _ (Just i), e) <- take n $ tail cs]
     LC.Write w -> case w of
       LC.Word8 ->  pokeV (intPtrToPtr $ toEnum t) (toEnum t' :: Word8) >> return (label lid, cs')
+      LC.Word16 ->  pokeV (intPtrToPtr $ toEnum t) (toEnum t' :: Word16) >> return (label lid, cs')
+      LC.Word32 ->  pokeV (intPtrToPtr $ toEnum t) (toEnum t' :: Word32) >> return (label lid, cs')
       LC.Word64 -> pokeV (intPtrToPtr $ toEnum t) (toEnum t' :: Word64) >> return (label lid, cs')
       where (Closure (Lit _ (Just t), _)):(Closure (Lit _ (Just t'), _)):cs' = cs
     LC.Read w -> case w of
       LC.Word8 -> (,cs') <$> (peekV (intPtrToPtr $ toEnum t) >>= return . Lit i . Just . (fromEnum :: Word8 -> Int))
+      LC.Word16 -> (,cs') <$> (peekV (intPtrToPtr $ toEnum t) >>= return . Lit i . Just . (fromEnum :: Word16 -> Int))
+      LC.Word32 -> (,cs') <$> (peekV (intPtrToPtr $ toEnum t) >>= return . Lit i . Just . (fromEnum :: Word32 -> Int))
       LC.Word64 -> (,cs') <$> (peekV (intPtrToPtr $ toEnum t) >>= return . Lit i . Just . (fromEnum :: Word64 -> Int))
       where (Closure (Lit _ (Just t), _)):cs' = cs
     a -> return $ (,cs') $ case a of 
@@ -93,6 +98,12 @@ cem ((Op i o, e), h, cs) = (\(t, cs') -> ((t, e), h, cs')) <$>
       LC.Neq -> toChurch $ (/=) t' t
       where (Closure (Lit _ arg2, _)):(Closure (Lit _ arg1, _)):cs' = cs
       where (Closure (Lit _ (Just t), _)):(Closure (Lit _ (Just t'), _)):cs' = cs
+
+isValue c@(t,e) = case t of
+  Lam _ _ _ -> True
+  Lit _ _ -> True
+  World _ -> True
+  _ -> False
 
 toChurch b = if b then label true else label false
 
