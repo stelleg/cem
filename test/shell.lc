@@ -1,7 +1,13 @@
 # Shell takes a line and executes it after splitting it into words
 shell = \line.(words line nil \cmd.\args.(fork nil (0 =)
-  [(exec cmd args) then (error "command not found")]
+  [(exec cmd args getEnv) then (error "command not found")]
   (wait 0)))
+
+# Compares first part of strings
+initStr = (all id zipWith eq)
+
+# Looks for the command in the PATH environment
+paths = 
 
 # Quits on ctrl-d (eof), otherwise returns the line
 getLineOrQuit = \world.(takeWhile \c.[c '\n' /=] (readFd 0 world

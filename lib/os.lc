@@ -100,6 +100,8 @@ exec = \fname.\argv.{buf = (newPage nil)}[
   (putStrBuf pageSize buf fname) \l.\str.
   (putWords argv l \al.\alocs.
   (putPtrBuf al (Cons buf alocs) \l.
-  (execve buf al envp)))
+  (putWords argv l \el.\elocs.
+  (putPtrBuf el (Cons buf elocs) \l.
+  (execve buf al el)))
 ]
 
