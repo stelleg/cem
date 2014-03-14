@@ -1,13 +1,7 @@
 % Cactus Environment Machine
 
-# Configuring
-Edit `cemDir` variable in `Main.hs` to point to build directory.  Needed for
-use of assembly macros.
-
 # Installing
     cabal install
-or 
-    make install
 
 Make sure ~/.cabal/bin/ is in your PATH variable.
 
@@ -32,6 +26,7 @@ See `lc` and `sugar` from `IO.hs` for parser syntax. Essentially a list of let
 bindings followed by an `lc` expression.
 
 # Required haskell libraries
+Should be installed automatically with install
 - graphviz
 - parsec
 - probably others
