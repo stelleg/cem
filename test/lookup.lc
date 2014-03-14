@@ -1,0 +1,3 @@
+# Looks up key/value pair
+paths = (lookup "PATH" strcmp envMap "path not found!" \x.x)
+main = (print paths)

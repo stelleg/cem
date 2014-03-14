@@ -102,6 +102,6 @@ exec = \fname.\argv.{buf = (newPage nil)}[
   (putPtrBuf al (Cons buf alocs) \l.
   (putWords argv l \el.\elocs.
   (putPtrBuf el (Cons buf elocs) \l.
-  (execve buf al el)))
+  (execve buf al el)))))
 ]
 

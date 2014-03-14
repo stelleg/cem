@@ -52,7 +52,9 @@ tail = (drop 1)
 splitAt = \n.\xs.(Pair (take n xs) (drop n xs))
 takeWhile = (Y \takeWhile.\f.\xs.(xs Nil \x.\xs.(f x (Cons x (takeWhile f xs)) Nil)))
 dropWhile = (Y \dropWhile.\f.\xs.(xs Nil \x.\xs.(f x (dropWhile f xs) (Cons x xs))))
-split = \f.\xs.(Pair (takeWhile (compose not f) xs) (dropWhile (compose not f) xs))
+split = \f.(Y \split.\xs.(xs (Pair Nil Nil) \h.\t.(f h 
+  (Pair Nil t)
+  (split t \acc.\rem.(Pair (Cons h acc) rem)))))
 showInt = (compose reverse \i.([i 0 =] (Cons 48 Nil) 
   (Y \showInt.\i.([i 0 =] Nil (Cons [[i 10 %] 48 +] [showInt i 10 /])) i)))
 readInt = (compose (Y \readInt.\n.(n 0 \h.\t.(add [h 48 -] [(readInt t) 10 *])))
@@ -64,7 +66,7 @@ partition = \f.(Y \partition.\s.\acc.(s (Pair acc Nil) \h.\t.(f h (Pair acc s)
     (partition t (append acc))))) 
 splitWhen = (Y \splitWhen.\f.\xs.(split f xs \l.\r.(r 
   (l Nil \h.\t.(Cons l Nil))
-  \h.\t.(Cons l (splitWhen f t)))))
+  \h.\t.(Cons l (splitWhen f r)))))
 words = (splitWhen isSpace)
 intersperse = \v.(Y \intersperse.\l.(l l \h.\t.(t l 
   \h'.\t'.[(Cons h) (Cons v) intersperse t])))
@@ -87,3 +89,8 @@ nil = 0
 initWorld = 0
 mapm = \f.(foldr \a.\b.(f a \c.b) nil)
 strcmp = \s.\s'.(all id (zipWith \x.\y.[x y =] s s'))
+lookup = \elem.\eqfun.(Y \lookup.\l.(l 
+  Nothing 
+  \h.\t.(h \key.\value.(eqfun elem key
+    (Just value)
+    (lookup t)))))
