@@ -1,4 +1,1 @@
-main = 
-(\double.
-  (double 5)  
-\x.(x (x +)))
+main = {double = \x.[x x +]} (double 5)

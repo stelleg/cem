@@ -1,4 +1,4 @@
-tuple = \t.(t "Hello" " world" " how" " are" " you?")
+tuple = \t.[(applyFromList t) words "Hello world how are you?"]
 
 world = (index 5 2)
 
