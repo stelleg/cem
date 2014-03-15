@@ -1,3 +1,7 @@
+# pipe system call
+sys_pipe = \fdes.[fdes 22 !1]
+pipe = \w.{fdes = (newPage w)} (sys_pipe fdes \n.[(rdl fdes) [rdl fdes 4 +] Pair])
+
 # Shell takes a line and executes it after splitting it into words
 shell = \line.(words line nil \cmd.\args.(fork nil (0 =)
   [(exec cmd args getEnv) then (error "command not found")]
@@ -6,6 +10,9 @@ shell = \line.(words line nil \cmd.\args.(fork nil (0 =)
 # Looks for the command in the PATH environment
 envMap = (map (split \c.[c '=' =]) getEnv)
 paths = (lookup "PATH" strcmp envMap "path not found!" (splitWhen \c.[c ':' =]))
+
+# Extracts all possible commands using ls output
+commands = (mapm \c.[shell (append "/usr/bin/ls ") c] paths)
 
 # Quits on ctrl-d (eof), otherwise returns the line
 getLineOrQuit = \world.(takeWhile \c.[c '\n' /=] (readFd 0 world
@@ -18,4 +25,9 @@ main = (forever \world.[
   shell getLineOrQuit world
 ] initWorld)
 
-main = (mapm print paths)
+main = {fdes = (newPage nil)}[
+  (sys_pipe fdes) \k.\n.
+  [[print showInt n] k] then \k.
+  [[print showInt rdl fdes] k] then
+  [print showInt rdl fdes 4 +]
+]

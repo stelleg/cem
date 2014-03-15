@@ -73,10 +73,14 @@ cem ((Op i o, e), h, cs) = (\(t, cs') -> ((t, e), h, cs')) <$>
     LC.Syscall n -> (,drop (n+1) cs) . Lit i . Just <$> syscall n t [i | Closure (Lit _ (Just i), e) <- take n $ tail cs]
     LC.Write w -> case w of
       LC.Word8 ->  pokeV (intPtrToPtr $ toEnum t) (toEnum t' :: Word8) >> return (label lid, cs')
+      LC.Word16 ->  pokeV (intPtrToPtr $ toEnum t) (toEnum t' :: Word16) >> return (label lid, cs')
+      LC.Word32 ->  pokeV (intPtrToPtr $ toEnum t) (toEnum t' :: Word32) >> return (label lid, cs')
       LC.Word64 -> pokeV (intPtrToPtr $ toEnum t) (toEnum t' :: Word64) >> return (label lid, cs')
       where (Closure (Lit _ (Just t), _)):(Closure (Lit _ (Just t'), _)):cs' = cs
     LC.Read w -> case w of
       LC.Word8 -> (,cs') <$> (peekV (intPtrToPtr $ toEnum t) >>= return . Lit i . Just . (fromEnum :: Word8 -> Int))
+      LC.Word16 -> (,cs') <$> (peekV (intPtrToPtr $ toEnum t) >>= return . Lit i . Just . (fromEnum :: Word16 -> Int))
+      LC.Word32 -> (,cs') <$> (peekV (intPtrToPtr $ toEnum t) >>= return . Lit i . Just . (fromEnum :: Word32 -> Int))
       LC.Word64 -> (,cs') <$> (peekV (intPtrToPtr $ toEnum t) >>= return . Lit i . Just . (fromEnum :: Word64 -> Int))
       where (Closure (Lit _ (Just t), _)):cs' = cs
     a -> return $ (,cs') $ case a of 
