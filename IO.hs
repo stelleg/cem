@@ -45,8 +45,9 @@ instance Show (SExpr) where
   show (Var s)     = s
   show (Lam s e)   = "λ" ++ s  ++ "." ++ show e
   show (App e1 e2) = "("  ++ show e1 ++ " " ++ show e2 ++ ")" 
-  show (Lit l) = show l
+  show (Lit l) = show l 
   show (Op o) = show o
+  show World = "Ω"
 
 instance Show (DBExpr) where
   show (Var s)     = show s
@@ -54,6 +55,7 @@ instance Show (DBExpr) where
   show (App e1 e2) = "("  ++ show e1 ++ " " ++ show e2 ++ ")" 
   show (Lit l) = show l
   show (Op o) = show o
+  show World = "Ω"
 
 -- INPUT
 word = (:) <$> letter <*> many (satisfy $ \c-> not (isSpace c || elem c "\\.()[]={}"))
@@ -78,6 +80,7 @@ lc =  Lam <$> ((char '\\' <|> char 'λ') *> word <* char '.') <^> lc
   <|> Var <$> word
   <|> Lit <$> literal
   <|> Op  <$> op
+  <|> World <$ char 'Ω'
   <|> char '(' ^> (foldl1 App <$> many1 (notCode *> lc <* notCode)) <^ char ')'
   <|> char '[' ^> (foldr1 App <$> many1 (notCode *> lc <* notCode)) <^ char ']'
   <|> char '\'' *> charLit <* char '\''
