@@ -55,8 +55,13 @@ dropWhile = (Y \dropWhile.\f.\xs.(xs Nil \x.\xs.(f x (dropWhile f xs) (Cons x xs
 split = \f.(Y \split.\xs.(xs (Pair Nil Nil) \h.\t.(f h 
   (Pair Nil t)
   (split t \acc.\rem.(Pair (Cons h acc) rem)))))
-showInt = (compose reverse \i.([i 0 =] (Cons 48 Nil) 
-  (Y \showInt.\i.([i 0 =] Nil (Cons [[i 10 %] 48 +] [showInt i 10 /])) i)))
+showInt = \i.{showPosInt = (Y \showPosInt.\i.([i 0 =]
+    Nil 
+    (Cons [[i 10 %] 48 +] [showPosInt i 10 /])))} [
+  ([i 0 =] "0") 
+  ([i 0 <] (Cons '-' (showPosInt [0 i -])))
+  (showPosInt i)
+]
 readInt = (compose (Y \readInt.\n.(n 0 \h.\t.(add [h 48 -] [(readInt t) 10 *])))
   (compose reverse (takeWhile \h.(and [h 48 >=] [h 58 <]))))
 showBool = \b.(b "True" "False")

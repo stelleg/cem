@@ -1,3 +1,4 @@
 # Looks up key/value pair
-paths = (lookup "PATH" strcmp envMap "path not found!" \x.x)
+dict = [(Cons (Pair "key" "value")) (Cons (Pair "PATH" "/usr/bin")) Nil]
+paths = (lookup "PATH" strcmp dict "path not found!" \x.x)
 main = (print paths)

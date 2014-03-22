@@ -1,3 +1,8 @@
+# getdents system call
+getdents = \fd.\dirent.\count.[fd dirent count 78 !3]
+ls = \dirname.{dirents = (newPage 1)} (open dirname \fd.([print showInt fd] \n.(getdents fd dirents pageSize 
+  \e.([e 0 /=] (error (printf "ls failed: %d" e)) (readStrBuf [dirents 24 +] pageSize)))))
+
 # pipe system call
 sys_pipe = \fdes.[fdes 22 !1]
 pipe = \w.{fdes = (newPage w)} (sys_pipe fdes \n.[(rdl fdes) [rdl fdes 4 +] Pair])
@@ -27,7 +32,9 @@ main = (forever \world.[
 
 main = {fdes = (newPage nil)}[
   (sys_pipe fdes) \k.\n.
-  [[print showInt n] k] then \k.
-  [[print showInt rdl fdes] k] then
-  [print showInt rdl fdes 4 +]
+  [(printf "n = %d" n) k] then \k.
+  [(printf "in = %d" (rdl fdes)) k] then \k.
+  [(printf "out = %d" [rdl fdes 4 +]) k] then 
+  (mapm print commands) 
+#  (print (ls "/usr/bin"))
 ]
