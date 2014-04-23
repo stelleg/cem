@@ -122,8 +122,7 @@ showGraph fname dg = do
   runGraphvizCanvas' dg Xlib
 
 todot ((c,e), (i,h), s) = digraph (Str "State") $ do
-  --graphAttrs [FontName "DroidSerif"]
-  nodeAttrs [] --[FontName "DroidSerif"]
+  nodeAttrs []
   cluster (Str "Closure") $ do
     graphAttrs [textLabel "Closure"]
     node (-2) [textLabel (pack.show$Closure (c,e)), 

@@ -1,1 +1,1 @@
-(putStrLn ([7 [4 3 +] =] "Correct" "Incorrect"))
+main = (putStrLn ([7 [4 3 +] =] "Correct" "Incorrect"))
