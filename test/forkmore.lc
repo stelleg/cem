@@ -1,4 +1,4 @@
-fork = \child.\parent.(fork 0 (0 =) child parent)
+fork = \child.\parent.(sys_fork 0 (0 =) child parent)
 
 main = [
   (print "Parent thread begins") then

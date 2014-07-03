@@ -3,5 +3,5 @@ cons = \h.\t.\n.\c.(c h t)
 nil = \n.\c.n
 nats = (Y \nats.\n.(cons n [nats n 1 +]))
 
-(nats 0)
+main = (nats 0)
 

@@ -1,106 +1,101 @@
 ## Memory read and write wrappers ##
-mvq = \val.\addr.[val addr @q]
-rdq = \addr.[addr $q]
-mvl = \val.\addr.[val addr @l]
-rdl = \addr.[addr $l]
-mvs = \val.\addr.[val addr @s]
-rds = \addr.[addr $s]
-mvb = \val.\addr.[val addr @b]
-rdb = \addr.[addr $b]
+mvq = \val.\addr.[addr val \a.\b._@q]
+rdq = \addr.[addr \a.\b._$q]
+mvl = \val.\addr.[addr val \a.\b._@l]
+rdl = \addr.[addr \a.\b._$l]
+mvs = \val.\addr.[addr val \a.\b._@s]
+rds = \addr.[addr \a.\b._$s]
+mvb = \val.\addr.[addr val \a.\b._@b]
+rdb = \addr.[addr \a.\b._$b]
 mv = mvq
 rd = rdq
 
 ## System calls ##
-mmap = \addr.\len.\prot.\flags.\fd.\offset.[addr len prot flags fd offset 9 !6]
-write = \fd.\buf.\count.[fd buf count 1 !3]
-read = \fd.\buf.\count.[fd buf count 0 !3]
-sys_open = \fname.\flags.\mode.[fname flags mode 2 !3]
-close = \fd.[fd 3 !1]
-exit = \code.[code 60 !1]
-socket = \dom.\type.\prot.[dom type prot 41 !3]
-fork = \world.[57 !0]
-nanosleep = \rqtp.\rmtp.[rqtp rmtp 35 !2]
-munmap = \addr.\len.[addr len 11 !2] 
-wait = \pid.[pid 0 0 61 !3]
-execve = \fname.\argv.\envp.[fname argv envp 59 !3]
+sys_mmap = \addr.\len.\prot.\flags.\fd.\offset.[offset fd flags prot len addr \a.\b.\c.\d.\e.\f.(\t._!6 9)]
+sys_write = \fd.\buf.\count.[count buf fd \a.\b.\c.(\t._!3 1)]
+sys_read = \fd.\buf.\count.[count buf fd \a.\b.\c.(\t._!3 0)]
+sys_open = \fname.\flags.\mode.[mode flags fname \a.\b.\c.(\t._!3 2)]
+sys_close = \fd.[fd \a.(\t._!1 3)]
+sys_exit = \code.[code \a.(\t._!1 60)]
+sys_socket = \dom.\type.\prot.[prot type dom \a.\b.\c.(\t._!3 41)]
+sys_fork = \world.[world \a.(\t._!0 57)]
+sys_nanosleep = \rqtp.\rmtp.[rmtp rqtp \a.\b.(\t._!2 35)]
+sys_munmap = \addr.\len.[len addr \a.\b.(\t._!2 11)]
+sys_wait = \pid.[pid (\pid.\a.\b.\t._!3 0 0 61)]
+sys_execve = \fname.\argv.\envp.[envp argv fname \a.\b.\c.(\t._!3 59)]
 
 ## Basic IO ##
 pageSize = 4096
-malloc = \len.(mmap 0 len 255 34 [0 1 -] 0)
-free = \ptr.(munmap ptr 1)
-sleep = \sec.\nsec.(malloc 2 \p.[(mvq sec p) (mvq nsec [p 8 +]) (nanosleep p p) \r.(free p \r'.r)])
-newPage = \w.(malloc pageSize \ptr.([ptr 0 <=] (exit 1) ptr))
-putStrBuf = \size.\buf.(Y \putStrBuf.\loc.\s.{finished = ([nil loc @b] Pair [loc 1 +] Nil)}(s
+malloc = \len.[0 (0 - 1) 34 255 len 0 sys_mmap]
+free = \ptr.(sys_munmap ptr 1)
+sleep = \sec.\nsec.(malloc 2 \p.[(mvq sec p) (mvq nsec (p + 8)) (sys_nanosleep p p) \r.(free p \r'.r)])
+newPage = \w.(malloc pageSize \ptr.(ptr <= 0 (sys_exit 1) ptr))
+putStrBuf = \size.\buf.(Y \putStrBuf.\loc.\s.{finished = (mvb 0 loc Pair (loc + 1)  Nil)}(s
   finished
-  \h.\t.([[loc buf -] size >=]
+  \h.\t.(loc - buf >= size
     finished 
-    ([h loc @b] (putStrBuf [loc 1 +] t)))) buf)
+    (mvb h loc (putStrBuf (loc + 1) t)))) buf)
 open = \fname.{nameBuf = (newPage nil)} (putStrBuf pageSize nameBuf fname \p.\s.
   (sys_open nameBuf 577 420))
 putPtrBuf = (Y \putPtrBuf.\loc.\s.(s 
-  (mv nil loc [loc 8 +])
-  \h.\t.(mv h loc (putPtrBuf [loc 8 +] t))))
-readPtrBuf = (Y \rstr.\loc.\n.([n 0 <=] 
+  (mv nil loc (loc + 8))
+  \h.\t.(mv h loc (putPtrBuf (loc + 8) t))))
+readPtrBuf = (Y \rstr.\loc.\n.(n <= 0
   Nil 
-  (rd loc \p.(p (0 =)
+  (rd loc \p.(p = 0
     Nil
-    (Cons p (rstr [loc 8 +] [n 1 -]))))))
-readStrBuf = (Y \rstr.\loc.\n.([n 0 <=] 
+    (Cons p (rstr (loc + 8) (n - 1)))))))
+readStrBuf = (Y \rstr.\loc.\n.(n <= 0
   Nil
-  {c = (rdb loc)} ([c 0 =] Nil (Cons c (rstr [loc 1 +] [n 1 -])))))
+  {c = (rdb loc)} (c = 0 Nil (Cons c (rstr (loc + 1) (n - 1))))))
 writeFd = \fd.\str.{iobuf = (newPage 0)} (Y \writeFd.\str.[
   (putStrBuf pageSize iobuf str) \p.\s.
-  (write fd iobuf [p iobuf -] \n.(s n \h.\t.(writeFd s)))
+  (sys_write fd iobuf (p - iobuf) \n.(s n \h.\t.(writeFd s)))
 ] str \n.(free iobuf \r.n))
 writeFile = \fname.\str.{iobuf = (newPage 0)}[
   (open fname \fd.
-  ([fd 1024 >] (exit 2) (writeFd fd str) \n.
+  (fd > 1024 (sys_exit 2) (writeFd fd str) \n.
   (free iobuf)))
 ]
 readFd = \fd.{iobuf = (newPage 0)}(Y \readFd.\w.[
-  (read fd iobuf pageSize) 
-  \n.([n pageSize >=]
+  (sys_read fd iobuf pageSize) 
+  \n.(n >= pageSize 
     (readStrBuf iobuf n Nil \h.\t.(append (Cons h t) (readFd w))) 
     (readStrBuf iobuf n))
 ])
 readFile = \fname.\str.{iobuf = (newPage 0)}[
   (open fname \fd.
-  ([fd 1024 >] (exit 2) (readFd fd str) (then
+  (fd > 1024 (sys_exit 2) (readFd fd str) (then
   (free iobuf))))
 ]
 putStr = (writeFd 1)
 putStrLn = \s.(writeFd 1 (append s "\n"))
 print = putStrLn
 getContents = (readFd 0 0)
-getLine = \w.(takeWhile \c.[c '\n' /=] (readFd 0 w))
+getLine = \w.(takeWhile \c.[c '\n' !=] (readFd 0 w))
 interact = \f.[putStr f getContents]
 getArgs = [tail (map (flip readStrBuf 1024)) (readPtrBuf argv argc)]
 getEnv = [tail (map (flip readStrBuf 1024)) (readPtrBuf envp 1024)]
 
 # Prelude-like utilities that require IO, e.g. partial functions
-error = \s.(putStrLn s exit)
+error = \s.(putStrLn s sys_exit)
 PME = (error "Pattern match error")
 head = \l.(l (error "head of empty list") \h.\t.h)
-index = \n.\k.(Y \index.\n.\k.\cont.([n 0 =]
+index = \n.\k.(Y \index.\n.\k.\cont.(n = 0
   cont
-  \x.(index [n 1 -] k ([k n =] x cont))) n [[n k -] 1 +] (error "index failed"))
-listIndex = (Y \listIndex.\n.\l.(l (error "listIndex failed") \h.\t.([n 0 =] h (listIndex [n 1 -] t))))
+  \x.(index (n - 1) k (k = n x cont))) n (n - k + 1) (error "index failed"))
+listIndex = (Y \listIndex.\n.\l.(l (error "listIndex failed") \h.\t.(n = 0 h (listIndex (n - 1) t))))
 fst = (index 2 1)
 snd = (index 2 2)
-sprintf = (Y \printf.\acc.\l.(l acc \h.\t.([h '%' =] 
+sprintf_ = \k.(Y \printf.\acc.\l.(l (k acc) \h.\t.(h = '%'
   (t (error "misformed format") \h.\t'.[
-    ([h 'd' =] \i.(printf (append acc (showInt i)) t'))
-    ([h 'c' =] \c.(printf (append acc (Cons c Nil)) t'))
-    ([h 's' =] \s.(printf (append acc s) t'))
+    (h = 'd' \i.(printf (append acc (showInt i)) t'))
+    (h = 'c' \c.(printf (append acc (Cons c Nil)) t'))
+    (h = 's' \s.(printf (append acc s) t'))
     (error "misformed format")])
   (printf (append acc (Cons h Nil)) t))) Nil)
-printf = (Y \printf.\acc.\l.(l (print acc) \h.\t.([h '%' =] 
-  (t (error "misformed format") \h.\t'.[
-    ([h 'd' =] \i.(printf (append acc (showInt i)) t'))
-    ([h 'c' =] \c.(printf (append acc (Cons c Nil)) t'))
-    ([h 's' =] \s.(printf (append acc s) t'))
-    (error "misformed format")])
-  (printf (append acc (Cons h Nil)) t))) Nil)
+sprintf = (sprintf_ id)
+printf = (sprintf_ print)
 putWords = (Y \putWords.\ws.\loc.(ws
   (Pair loc Nil)
   \w.\ws.(putStrBuf 1024 loc w
@@ -111,6 +106,6 @@ exec = \fname.\argv.{buf = (newPage nil)}[
   (putPtrBuf al (Cons buf alocs) \l.
   (putWords argv l \el.\elocs.
   (putPtrBuf el (Cons buf elocs) \l.
-  (execve buf al el)))))
+  (sys_execve buf al el)))))
 ]
 
