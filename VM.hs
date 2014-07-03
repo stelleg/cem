@@ -30,6 +30,8 @@ data LExpr = Var Label String
            | App Label LExpr LExpr
            | Lit Label (Maybe LC.Literal)
            | Op  Label LC.Op
+           | World Label
+           | Set (S.Set LExpr)
 
 type Label = Int
 
@@ -72,6 +74,7 @@ labeled e = evalState (labeled' e) 0
         labeled' (LC.Var v) = Var <$> incr <*> pure v
         labeled' (LC.Lit l) = Lit <$> incr <*> pure (Just l)
         labeled' (LC.Op o) = Op <$> incr <*> pure o 
+        labeled' LC.World = World <$> incr
         incr = do i <- get; put (i+1); return i
 
 vlookup v e h = maybe (error $ "unbound var: " ++ v) match (M.lookup e (snd h))
@@ -87,18 +90,17 @@ isValue (Var _ _) = False
 isValue _ = True
 
 cem :: CEMState -> IO CEMState
+cem ((c,e), (n,h), Update loc:s) | isValue c = return ((c,e), (n,update loc (c,e) h), s)
 cem ((Var i v, e), h, s) = let (cl, e') = vlookup v e h in
   return (cl, h, Update e':s)
 cem ((App i m n, e), h, s) = 
   return ((m,e),h, Closure (n,e):s)
 cem ((Lam i v e', e), (n,h), Closure c:cs) = 
   return ((e', (n+1)), (n+1, M.insert (n+1) (v,c,e) h), cs)
-cem ((Lam i v e', e), (n,h), Update loc:cs) = 
-  return ((Lam i v e', e), (n,update loc (Lam i v e', e) h), cs)
 cem ((Lit i l, e), (n,h), Closure c:cs) = 
-  return (c, (n,h), Closure ((Lit i l),e):cs)
-cem ((Lit i l, e), (n,h), Update loc:cs) = 
-  return ((Lit i l, e), (n,update loc (Lit i l, e) h), cs)
+  return (c, (n,h), Closure (Lit i l,e):cs)
+cem ((World i, e), (n,h), Closure c:cs) = 
+  return (c, (n,h), Closure (World i,e):cs)
 cem ((Op i o, e), h, cs) = (\(t, cs') -> ((t, e), h, cs')) <$> 
   case o of     
     LC.Syscall n -> (,cs) . Lit i . Just <$> syscall n [i | (Lit _ (Just i), e) <- take (n+1) $ env e h]
