@@ -31,7 +31,6 @@ data LExpr = Var Label String
            | Lit Label (Maybe LC.Literal)
            | Op  Label LC.Op
            | World Label
-           | Set (S.Set LExpr)
 
 type Label = Int
 
@@ -50,6 +49,7 @@ instance Show LExpr where
     App l m n -> "(" ++ show m ++ " " ++ show n ++ ")"
     Lit l i -> case i of Nothing -> "#"; Just i -> show i
     Op l o -> show o
+    World w -> "Ω"
 
 showlabeled e = case e of
     Var l s -> s ++ "_" ++ show l
@@ -57,6 +57,7 @@ showlabeled e = case e of
     App l m n -> "(_" ++ show l ++ showlabeled m ++ " " ++ showlabeled n ++ ")"
     Lit l i -> (case i of Nothing -> "#"; Just i -> show i) ++ "_" ++ show l
     Op l o -> show o ++ "_" ++ show l
+    World w -> "Ω_" ++ show w
 
 getLabel :: LExpr -> Label
 getLabel e = case e of

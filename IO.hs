@@ -58,7 +58,7 @@ instance Show (DBExpr) where
 
 -- INPUT
 word :: Parser String
-word = (:) <$> satisfy (\c -> not (isSpace c || isDigit c || elem c "\'\"\\.#()[]{}_"))
+word = (:) <$> satisfy (\c -> not (isSpace c || isDigit c || elem c "\'\"\\.#()[]{}_Ω"))
        <*> many (satisfy $ \c-> not (isSpace c || elem c "\\.()[]{}#"))
 
 literal :: Parser Int
@@ -73,7 +73,7 @@ pa <^ pb  = pa <* (notCode >> pb)
 infixl 4 <^>, <^, ^>
 
 parseProgram :: String -> SExpr 
-parseProgram s = parseSource lc $ "{" ++ s ++ "}" ++ "main"
+parseProgram s = parseSource lc $ "{" ++ s ++ "}" ++ "(main Ω)"
 
 parseSource :: Parser SExpr -> String -> SExpr
 parseSource p src = either (error.show) id . parse p "" $ src
@@ -179,7 +179,7 @@ toMacro n i s = case i of
 syscallregs = ["%rdi", "%rsi", "%rdx", "%r10", "%r8", "%r9"]
 
 compile :: DBExpr -> [Instr]
---compile (Lam _ e) | bound 0 e == 0 = POP : compile (dec 0 e)
+compile (Lam _ e) | bound 0 e == 0 = POP : compile (dec 0 e)
 compile (Lam _ e)  = TAKE : compile e
 compile (Var i)    = [ENTER i]
 compile (App m n)  = PUSH (length ms + 1) : ms ++ compile n where ms = compile m
