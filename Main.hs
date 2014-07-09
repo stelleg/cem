@@ -1,5 +1,5 @@
 import System.Environment as SE
-import System.Cmd (system)
+import System.Process (system)
 import Paths_cem (getDataFileName)
 import Text.ParserCombinators.Parsec hiding (label)
 import qualified IO
@@ -39,24 +39,27 @@ readSources s = concat <$> mapM (\f->if f == "-" then getContents else readFile 
 version = putStrLn $ "0.1 Alpha"  
 usage = putStrLn $ "Usage: cem {-lhvdgpcf} {file(s)}"
 
-cfa s = putStrLn $ A.ppca $ A.ca $ A.labeled $ IO.parseProgram s
+cfa s = do
+  let prog = VM.labeled $ IO.parseProgram s
+  putStrLn $ VM.showlabeled prog
+  putStrLn $ A.ppca $ A.ca prog
 
 graph :: String -> IO ()
 graph s = do 
   ind <- newIORef 0
-  VM.traceCEM (sg ind) . (\e->((e,0),(0, M.empty),[])) $ VM.label $ IO.parseProgram s; return ()
+  VM.traceCEM (sg ind) . (\e->((e,0),(0, M.empty),[])) $ VM.labeled $ IO.parseProgram s; return ()
   where sg ind init = do modifyIORef ind (+1)
                          i <- readIORef ind
                          VM.showGraph (show i ++ ".dot") . VM.todot $ init
 
 partial :: (VM.CEMState -> IO ()) -> String -> IO ()
-partial f s = do ((c,e), h, s) <- VM.traceCEM f . (\e->((e,0),(0,M.empty),[])) $ VM.label $ IO.parseProgram s
+partial f s = do ((c,e), h, s) <- VM.traceCEM f . (\e->((e,0),(0,M.empty),[])) $ VM.labeled $ IO.parseProgram s
                  case c of
                    VM.Lit _ (Just i) -> exitWith (ExitFailure i)
                    _ -> exitWith (ExitFailure 255)
 
 freevars :: String -> IO ()
-freevars s = print $ A.fv $ A.labeled $ IO.parseProgram s
+freevars s = print $ A.fv $ VM.labeled $ IO.parseProgram s
 
 compile :: String -> String -> IO ()
 compile filename s = do

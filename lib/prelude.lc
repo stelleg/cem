@@ -1,11 +1,15 @@
 Y = \g.(\x.[g x x] \x.[g x x])
-add = \n.\m.[n m +]
-sub = \n.\m.[n m -]
-mul = \n.\m.[n m *]
-div = \n.\m.[n m /]
-mod = \n.\m.[n m %]
-eq = \n.\m.[n m =]
-neq = \n.\m.[n m /=]
++ = \n.\m.[m n \n.\m._+]
+- = \n.\m.[m n \n.\m._-]
+* = \n.\m.[m n \n.\m._*]
+/ = \n.\m.[m n \n.\m._/]
+% = \n.\m.[m n \n.\m._%]
+= = \n.\m.[m n \n.\m._=]
+!= = \n.\m.[m n \n.\m._\=]
+>= = \n.\m.[m n \n.\m._>=]
+<= = \n.\m.[m n \n.\m._<=]
+< = \n.\m.[m n \n.\m._<]
+> = \n.\m.[m n \n.\m._>]
 False = \t.\f.f
 True = \t.\f.t
 and = \a.\b.(a b False)
@@ -20,7 +24,7 @@ Nil = True
 nil? = \l.(l True \h.\t.False)
 Pair = \f.\s.\p.(p f s)
 gcd = (Y \gcd.\a.\b.([b 0 =] a (gcd b [a b %])))
-lcm = \a.\b.(div [a b *] (gcd a b))
+lcm = \a.\b.(/ [a b *] (gcd a b))
 even = \n.[[n 2 %] 0 =]
 odd = \n.[[n 2 %] 1 =]
 id = \x.x
@@ -55,14 +59,14 @@ dropWhile = (Y \dropWhile.\f.\xs.(xs Nil \x.\xs.(f x (dropWhile f xs) (Cons x xs
 split = \f.(Y \split.\xs.(xs (Pair Nil Nil) \h.\t.(f h 
   (Pair Nil t)
   (split t \acc.\rem.(Pair (Cons h acc) rem)))))
-showInt = \i.{showPosInt = (Y \showPosInt.\i.([i 0 =]
+showInt = \i.{showPosInt = (compose reverse (Y \showPosInt.\i.(i = 0
     Nil 
-    (Cons [[i 10 %] 48 +] [showPosInt i 10 /])))} [
-  ([i 0 =] "0") 
-  ([i 0 <] (Cons '-' (showPosInt [0 i -])))
+    (Cons (i % 10 + 48) (showPosInt (i / 10))))))} [
+  (i = 0 "0") 
+  (i < 0 (Cons '-' (showPosInt (0 - i))))
   (showPosInt i)
 ]
-readInt = (compose (Y \readInt.\n.(n 0 \h.\t.(add [h 48 -] [(readInt t) 10 *])))
+readInt = (compose (Y \readInt.\n.(n 0 \h.\t.(+ [h 48 -] [(readInt t) 10 *])))
   (compose reverse (takeWhile \h.(and [h 48 >=] [h 58 <]))))
 showBool = \b.(b "True" "False")
 forever = \comp.(Y \forever.\iw.(comp iw \w.(forever w)))
@@ -80,7 +84,7 @@ if = id
 from = (iterate \x.[x 1 +])
 range = \s.\e.(take [[e s -] 1 +] (from s))
 then = \cont.\result.cont
-sum = (foldr add 0)
+sum = (foldr + 0)
 max = \x.\y.([x y >] x y)
 min = \x.\y.([x y <] x y)
 unlines = (concatMap (flip append "\n"))

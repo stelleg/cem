@@ -3,6 +3,7 @@ module VM where
 
 import qualified Data.Set as S
 import qualified Data.Map as M
+import qualified Data.IntMap as IM
 import qualified LC as LC
 import IO
 import Data.Text.Lazy (pack)
@@ -34,6 +35,14 @@ data LExpr = Var Label String
 
 type Label = Int
 
+expr :: LExpr -> IM.IntMap LExpr
+expr e = case e of
+  Var l v -> IM.singleton l $ Var l v
+  App l m n -> IM.insert l (App l m n) (expr m `IM.union` expr n)
+  Lam l v e -> IM.insert l (Lam l v e) (expr e)
+  Lit l i -> IM.singleton l $ Lit l i
+  Op l o -> IM.singleton l $ Op l o
+
 instance Show LExpr where
   show e = case e of
     Var l s -> s
@@ -42,23 +51,46 @@ instance Show LExpr where
     Lit l i -> case i of Nothing -> "#"; Just i -> show i
     Op l o -> show o
 
-label :: LC.SExpr -> LExpr
-label e = evalState (label' e) 0
-  where label' :: LC.SExpr  -> State Int LExpr
-        label' (LC.Lam l e) = do i<-get; modify succ; e'<-label' e; return $ Lam i l e'
-        label' (LC.App m n) = do i<-get; modify succ; m'<-label' m; n'<-label' n; return $ App i m' n'
-        label' (LC.Var v) = do i<-get; modify succ; return $ Var i v
-        label' (LC.Lit l) = do i<-get; modify succ; return $ Lit i (Just l)
-        label' (LC.Op o) = do i<-get; modify succ; return $ Op i o 
-        label' LC.World = do i<-get; modify succ; return $ World i 
+showlabeled e = case e of
+    Var l s -> s ++ "_" ++ show l
+    Lam l s e -> "λ_" ++ show l ++ s ++ '.':showlabeled e
+    App l m n -> "(_" ++ show l ++ showlabeled m ++ " " ++ showlabeled n ++ ")"
+    Lit l i -> (case i of Nothing -> "#"; Just i -> show i) ++ "_" ++ show l
+    Op l o -> show o ++ "_" ++ show l
+
+getLabel :: LExpr -> Label
+getLabel e = case e of
+  Var l v -> l
+  Lam l v e -> l
+  App l m n -> l
+  Lit l i -> l
+  Op l o -> l
+
+labeled :: LC.SExpr -> LExpr
+labeled e = evalState (labeled' e) 0
+  where labeled' :: LC.SExpr  -> State Int LExpr
+        labeled' (LC.Lam l e) = Lam <$> incr <*> pure l <*> labeled' e
+        labeled' (LC.App m n) = App <$> incr <*> labeled' m <*> labeled' n
+        labeled' (LC.Var v) = Var <$> incr <*> pure v
+        labeled' (LC.Lit l) = Lit <$> incr <*> pure (Just l)
+        labeled' (LC.Op o) = Op <$> incr <*> pure o 
+        labeled' LC.World = World <$> incr
+        incr = do i <- get; put (i+1); return i
 
 vlookup v e h = maybe (error $ "unbound var: " ++ v) match (M.lookup e (snd h))
   where match (v', cl, e') = if v == v' then (cl, e) else vlookup v e' h
 
+env e h = maybe [] next $ M.lookup e (snd h)
+  where next (v', cl, e') = cl:env e' h
+
 update l c h = M.insertWith (\(s,c,e) (s',c',e') -> (s',c,e')) l ("",c,-1) h
 
+isValue (App _ _ _) = False
+isValue (Var _ _) = False
+isValue _ = True
+
 cem :: CEMState -> IO CEMState
-cem (c, (n,h), Update loc:s) | isValue c = return (c, (n,update loc c h), s)
+cem ((c,e), (n,h), Update loc:s) | isValue c = return ((c,e), (n,update loc (c,e) h), s)
 cem ((Var i v, e), h, s) = let (cl, e') = vlookup v e h in
   return (cl, h, Update e':s)
 cem ((App i m n, e), h, s) = 
@@ -71,20 +103,20 @@ cem ((World i, e), (n,h), Closure c:cs) =
   return (c, (n,h), Closure (World i,e):cs)
 cem ((Op i o, e), h, cs) = (\(t, cs') -> ((t, e), h, cs')) <$> 
   case o of     
-    LC.Syscall n -> (,drop (n+1) cs) . Lit i . Just <$> syscall n t [i | Closure (Lit _ (Just i), e) <- take n $ tail cs]
+    LC.Syscall n -> (,cs) . Lit i . Just <$> syscall n [i | (Lit _ (Just i), e) <- take (n+1) $ env e h]
     LC.Write w -> case w of
-      LC.Word8 ->  pokeV (intPtrToPtr $ toEnum t) (toEnum t' :: Word8) >> return (label lid, cs')
-      LC.Word16 ->  pokeV (intPtrToPtr $ toEnum t) (toEnum t' :: Word16) >> return (label lid, cs')
-      LC.Word32 ->  pokeV (intPtrToPtr $ toEnum t) (toEnum t' :: Word32) >> return (label lid, cs')
-      LC.Word64 -> pokeV (intPtrToPtr $ toEnum t) (toEnum t' :: Word64) >> return (label lid, cs')
-      where (Closure (Lit _ (Just t), _)):(Closure (Lit _ (Just t'), _)):cs' = cs
+      LC.Word8 ->  pokeV (intPtrToPtr $ toEnum t) (toEnum t' :: Word8) >> return (labeled lid, cs)
+      LC.Word16 ->  pokeV (intPtrToPtr $ toEnum t) (toEnum t' :: Word16) >> return (labeled lid, cs)
+      LC.Word32 ->  pokeV (intPtrToPtr $ toEnum t) (toEnum t' :: Word32) >> return (labeled lid, cs)
+      LC.Word64 -> pokeV (intPtrToPtr $ toEnum t) (toEnum t' :: Word64) >> return (labeled lid, cs)
+      where (Lit _ (Just t), _):(Lit _ (Just t'), _):e' = env e h
     LC.Read w -> case w of
-      LC.Word8 -> (,cs') <$> (peekV (intPtrToPtr $ toEnum t) >>= return . Lit i . Just . (fromEnum :: Word8 -> Int))
-      LC.Word16 -> (,cs') <$> (peekV (intPtrToPtr $ toEnum t) >>= return . Lit i . Just . (fromEnum :: Word16 -> Int))
-      LC.Word32 -> (,cs') <$> (peekV (intPtrToPtr $ toEnum t) >>= return . Lit i . Just . (fromEnum :: Word32 -> Int))
-      LC.Word64 -> (,cs') <$> (peekV (intPtrToPtr $ toEnum t) >>= return . Lit i . Just . (fromEnum :: Word64 -> Int))
-      where (Closure (Lit _ (Just t), _)):cs' = cs
-    a -> return $ (,cs') $ case a of 
+      LC.Word8 -> (,cs) <$> (peekV (intPtrToPtr $ toEnum t) >>= return . Lit i . Just . (fromEnum :: Word8 -> Int))
+      LC.Word16 -> (,cs) <$> (peekV (intPtrToPtr $ toEnum t) >>= return . Lit i . Just . (fromEnum :: Word16 -> Int))
+      LC.Word32 -> (,cs) <$> (peekV (intPtrToPtr $ toEnum t) >>= return . Lit i . Just . (fromEnum :: Word32 -> Int))
+      LC.Word64 -> (,cs) <$> (peekV (intPtrToPtr $ toEnum t) >>= return . Lit i . Just . (fromEnum :: Word64 -> Int))
+      where (Lit _ (Just t), _):e' = env e h
+    a -> return $ (,cs) $ case a of 
       LC.Add -> Lit i $ (+) <$> arg1 <*> arg2
       LC.Sub -> Lit i $ (-) <$> arg1 <*> arg2
       LC.Mul -> Lit i $ (*) <$> arg1 <*> arg2
@@ -96,16 +128,10 @@ cem ((Op i o, e), h, cs) = (\(t, cs') -> ((t, e), h, cs')) <$>
       LC.Gt -> toChurch $ (>) t' t
       LC.Eq -> toChurch $ (==) t' t
       LC.Neq -> toChurch $ (/=) t' t
-      where (Closure (Lit _ arg2, _)):(Closure (Lit _ arg1, _)):cs' = cs
-      where (Closure (Lit _ (Just t), _)):(Closure (Lit _ (Just t'), _)):cs' = cs
+      where (Lit _ arg2, _):(Lit _ arg1, _):e' = env e h
+      where (Lit _ (Just t), _):(Lit _ (Just t'), _):e' = env e h
 
-isValue c@(t,e) = case t of
-  Lam _ _ _ -> True
-  Lit _ _ -> True
-  World _ -> True
-  _ -> False
-
-toChurch b = if b then label true else label false
+toChurch b = if b then labeled true else labeled false
 
 traceCEM :: (CEMState -> IO ()) -> CEMState -> IO CEMState
 traceCEM pp m = case m of 

@@ -1,1 +1,4 @@
-\x.x
+id = \x.x
+a = (id \y.y)
+b = (id \z.z)
+main = (a b)
