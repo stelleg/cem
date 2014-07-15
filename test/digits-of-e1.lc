@@ -3,15 +3,15 @@ aux = (Y \aux.\n.[(: 1) (: n) (: 1) aux (n + 2)])
 eContFrac = [(: 2) aux 2]
 
 ratTrans = (Y \ratTrans.\a.\b.\c.\d.\xs.(\q.(and
-      (or [(signum c) (signum d) =] [(abs c) (abs d) <])
-      (and [[[c d +] q *] [a b +] <=] [[[c d +] [q 1 +] *] [a b +] >])
-    (Cons q (ratTrans c d [a [q c *] -] [b [q d *] -] xs)) 
-    (ratTrans b [a [(head xs) b *] +] d [c [(head xs) d *] +] (tail xs)))
-  [b d /]))
+      (or (signum c = (signum d)) (abs c < (abs d)))
+      (and (c + d * q <= (a + b))  (c + d * (q + 1) > (a + b)))
+    (: q (ratTrans c d (a - (q * c)) (b - (q * d))  xs))
+    (ratTrans b (a + (head xs * b)) d (c + (head xs * d)) (tail xs)))
+  (b / d)))
 
 toDigits = (Y \toDigits.\l.(l (error "Pattern match") 
-  \h.\t.(Cons h (toDigits (ratTrans 10 0 0 1 t)))))
+  \h.\t.(: h (toDigits (ratTrans 10 0 0 1 t)))))
 
 e = (toDigits eContFrac)
 
-main = [putStrLn [take readInt head getArgs] (concatMap showInt) e]
+main = [putStrLn (take 10) (concatMap showInt) e]

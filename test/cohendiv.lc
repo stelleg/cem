@@ -1,7 +1,7 @@
-cohendiv = \x.\y.(Y \ol.\q.\r.([r y >=] 
-  (Y \il.\a.\b.([r [b 2 *] >=] 
-    (il [a 2 *] [b 2 *]) 
-    \p.(p a b)) 1 y \a.\b.(ol [q a +] [r b -]))
+cohendiv = \x.\y.(Y \ol.\q.\r.(r >= y
+  (Y \il.\a.\b.(r >= (b * 2)
+    (il (a * 2) (b * 2))
+    (Pair a b)) 1 y \a.\b.(ol (q + a) (r - b)))
   q) 0 x)
 
 main = [putStrLn showInt (cohendiv 50 5)]

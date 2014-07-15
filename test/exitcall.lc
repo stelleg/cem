@@ -1,1 +1,1 @@
-main = (exit 10)
+main = (sys_exit 10)

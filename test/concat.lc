@@ -1,1 +1,1 @@
-main = [putStrLn concat [(Cons "Hello") (Cons " world") (Cons " today") Nil]]
+main = [putStrLn concat (: "Hello" (: " world" (: " today" ;)))]
