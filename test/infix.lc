@@ -1,4 +1,0 @@
-inf = \x.\f.\y.(f x y)
-sin = \x.\f.\y.[x y f]
-
-main = (sin 8 / 4)

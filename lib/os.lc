@@ -1,79 +1,84 @@
 ## Memory read and write wrappers ##
-mvq = \val.\addr.[addr val \a.\b._@q]
-rdq = \addr.[addr \a.\b._$q]
-mvl = \val.\addr.[addr val \a.\b._@l]
-rdl = \addr.[addr \a.\b._$l]
-mvs = \val.\addr.[addr val \a.\b._@s]
-rds = \addr.[addr \a.\b._$s]
-mvb = \val.\addr.[addr val \a.\b._@b]
-rdb = \addr.[addr \a.\b._$b]
+mvq = \val.\addr.\w.[w addr val \a.\b.\w._@q]
+rdq = \addr.\w.[w addr \a.\w._$q]
+mvl = \val.\addr.\w.[w addr val \a.\b.\w._@l]
+rdl = \addr.\w.[w addr \a.\w._$l]
+mvs = \val.\addr.\w.[w addr val \a.\b.\w._@s]
+rds = \addr.\w.[w addr \a.\w._$s]
+mvb = \val.\addr.\w.[w addr val \a.\b.\w._@b]
+rdb = \addr.\w.[w addr \a.\w._$b]
 mv = mvq
 rd = rdq
 
 ## System calls ##
-sys_mmap = \addr.\len.\prot.\flags.\fd.\offset.[offset fd flags prot len addr \a.\b.\c.\d.\e.\f.(\t._!6 9)]
-sys_write = \fd.\buf.\count.[count buf fd \a.\b.\c.(\t._!3 1)]
-sys_read = \fd.\buf.\count.[count buf fd \a.\b.\c.(\t._!3 0)]
-sys_open = \fname.\flags.\mode.[mode flags fname \a.\b.\c.(\t._!3 2)]
-sys_close = \fd.[fd \a.(\t._!1 3)]
-sys_exit = \code.[code \a.(\t._!1 60)]
-sys_socket = \dom.\type.\prot.[prot type dom \a.\b.\c.(\t._!3 41)]
-sys_fork = \world.[world \a.(\t._!0 57)]
-sys_nanosleep = \rqtp.\rmtp.[rmtp rqtp \a.\b.(\t._!2 35)]
-sys_munmap = \addr.\len.[len addr \a.\b.(\t._!2 11)]
-sys_wait = \pid.[pid (\pid.\a.\b.\t._!3 0 0 61)]
-sys_execve = \fname.\argv.\envp.[envp argv fname \a.\b.\c.(\t._!3 59)]
+sys_mmap = \addr.\len.\prot.\flags.\fd.\offset.\w.[w offset fd flags prot len addr \a.\b.\c.\d.\e.\f.(\t.\w._!6 9)]
+sys_write = \fd.\buf.\count.\w.[w count buf fd \a.\b.\c.(\t.\w._!3 1)]
+sys_read = \fd.\buf.\count.\w.[w count buf fd \a.\b.\c.(\t.\w._!3 0)]
+sys_open = \fname.\flags.\mode.\w.[w mode flags fname \a.\b.\c.(\t.\w._!3 2)]
+sys_close = \fd.\w.[w fd \a.(\t.\w._!1 3)]
+sys_exit = \code.\w.[w code \a.(\t.\w._!1 60)]
+sys_socket = \dom.\type.\prot.\w.[w prot type dom \a.\b.\c.(\t.\w._!3 41)]
+sys_fork = \world.[world (\t.\w._!0 57)]
+sys_nanosleep = \rqtp.\rmtp.\w.[w rmtp rqtp \a.\b.(\t.\w._!2 35)]
+sys_munmap = \addr.\len.\w.[w len addr \a.\b.(\t.\w._!2 11)]
+sys_wait = \pid.\w.[w pid (\pid.\a.\b.\t.\w._!3 0 0 61)]
+sys_execve = \fname.\argv.\envp.\w.[w envp argv fname \a.\b.\c.(\w.\t._!3 59)]
 
 ## Basic IO ##
 pageSize = 4096
-malloc = \len.[0 (0 - 1) 34 255 len 0 sys_mmap]
+malloc = \len.(sys_mmap 0 len 255 34 (-' 1) 0)
 free = \ptr.(sys_munmap ptr 1)
 sleep = \sec.\nsec.(malloc 2 \p.[(mvq sec p) (mvq nsec (p + 8)) (sys_nanosleep p p) \r.(free p \r'.r)])
-newPage = \w.(malloc pageSize \ptr.(ptr <= 0 (sys_exit 1) ptr))
-putStrBuf = \size.\buf.(Y \putStrBuf.\loc.\s.{finished = (mvb 0 loc Pair (loc + 1)  Nil)}(s
+newPage = (malloc pageSize)
+putStrBuf = \size.\buf.(Y \putStrBuf.\loc.\s.{finished = (>> (mvb 0 loc) (return (Pair (loc + 1) Nil)))}(s
   finished
   \h.\t.(loc - buf >= size
     finished 
-    (mvb h loc (putStrBuf (loc + 1) t)))) buf)
-open = \fname.{nameBuf = (newPage nil)} (putStrBuf pageSize nameBuf fname \p.\s.
-  (sys_open nameBuf 577 420))
+    (>> (mvb h loc) (putStrBuf (loc + 1) t)))) buf)
+open = \fname.(>>= newPage \nameBuf.(
+  >> (putStrBuf pageSize nameBuf fname)
+  (sys_open nameBuf 577 420)))
 putPtrBuf = (Y \putPtrBuf.\loc.\s.(s 
-  (mv nil loc (loc + 8))
-  \h.\t.(mv h loc (putPtrBuf (loc + 8) t))))
+  (>> (mv nil loc) (return (loc + 8)))
+  \h.\t.(>> (mv h loc) (putPtrBuf (loc + 8) t))))
 readPtrBuf = (Y \rstr.\loc.\n.(n <= 0
-  Nil 
-  (rd loc \p.(p = 0
-    Nil
-    (Cons p (rstr (loc + 8) (n - 1)))))))
+  (return Nil)
+  (>>= (rd loc) \p.(p = 0
+    (return Nil)
+    (>>= (rstr (loc + 8) (n - 1)) \s.(return (: p s)))))))
 readStrBuf = (Y \rstr.\loc.\n.(n <= 0
-  Nil
-  {c = (rdb loc)} (c = 0 Nil (Cons c (rstr (loc + 1) (n - 1))))))
-writeFd = \fd.\str.{iobuf = (newPage 0)} (Y \writeFd.\str.[
-  (putStrBuf pageSize iobuf str) \p.\s.
-  (sys_write fd iobuf (p - iobuf) \n.(s n \h.\t.(writeFd s)))
-] str \n.(free iobuf \r.n))
-writeFile = \fname.\str.{iobuf = (newPage 0)}[
-  (open fname \fd.
-  (fd > 1024 (sys_exit 2) (writeFd fd str) \n.
-  (free iobuf)))
-]
-readFd = \fd.{iobuf = (newPage 0)}(Y \readFd.\w.[
-  (sys_read fd iobuf pageSize) 
-  \n.(n >= pageSize 
-    (readStrBuf iobuf n Nil \h.\t.(append (Cons h t) (readFd w))) 
-    (readStrBuf iobuf n))
-])
-readFile = \fname.\str.{iobuf = (newPage 0)}[
-  (open fname \fd.
-  (fd > 1024 (sys_exit 2) (readFd fd str) (then
+  (return Nil)
+  (>>= (rdb loc) \c.(c = 0 
+    (return Nil) 
+    (>>= (rstr (loc + 1) (n - 1)) \s.(return (: c s)))))))
+writeFd = \fd.\str.(>>= newPage \iobuf.(>> (Y \writeFd.\str.(
+  >>= (putStrBuf pageSize iobuf str) \p.(p \p.\s.(
+  >>= (sys_write fd iobuf (p - iobuf)) \n.(
+  s (return n) \h.\t.(writeFd s))))
+) str) (free iobuf)))
+writeFile = \fname.\str.(newPage 0 >>= \iobuf.(
+  >>= (open fname) \fd.(
+  >> (fd > 1024 (sys_exit 2) (writeFd fd str))
   (free iobuf))))
-]
+readFd = \fd.(>>= newPage \iobuf.(Y \readFd.(
+  >>= (sys_read fd iobuf pageSize) \n.(
+  n >= pageSize 
+    (>>= (readStrBuf iobuf n) \s.(s
+      (return Nil)
+      \h.\t.(>>= readFd (append (Cons h t)))))
+    (readStrBuf iobuf n)))))
+readFile = \fname.\str.(>>= newPage \iobuf.(
+  >>= (open fname) \fd.(
+  >> (fd > 1024 
+    (sys_exit 2) 
+    (readFd fd str))
+  (free iobuf))))
 putStr = (writeFd 1)
 putStrLn = \s.(writeFd 1 (append s "\n"))
 print = putStrLn
-getContents = (readFd 0 0)
-getLine = \w.(takeWhile \c.[c '\n' !=] (readFd 0 w))
-interact = \f.[putStr f getContents]
+getContents = (readFd 0)
+getLine = (>>= getContents \s.(return (takeWhile \c.[c '\n' !=] s)))
+interact = \f.(>>= getContents \s.[putStr f s])
 getArgs = [tail (map (flip readStrBuf 1024)) (readPtrBuf argv argc)]
 getEnv = [tail (map (flip readStrBuf 1024)) (readPtrBuf envp 1024)]
 

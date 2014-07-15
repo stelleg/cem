@@ -1,2 +1,2 @@
-caps = \p.\c.(and [p ' ' =] (and [c 'a' >=] [c 'z' <=]) [c 32 -] c)
-main = [putStr tail (scanl caps ' ') getContents]
+caps = \p.\c.(and (p = ' ') (and (c >= 'a') (c <= 'z')) (c - 32) c)
+main = (>>= getContents \s.[putStr tail (scanl caps ' ') s])

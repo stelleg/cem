@@ -1,4 +1,1 @@
-main = [
-  [putStr getLine nil] then
-  [length getLine nil]
-]
+main = (>>= getLine print)

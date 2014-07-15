@@ -91,7 +91,8 @@ isValue (Var _ _) = False
 isValue _ = True
 
 cem :: CEMState -> IO CEMState
-cem ((c,e), (n,h), Update loc:s) | isValue c = return ((c,e), (n,update loc (c,e) h), s)
+cem ((c,e), (n,h), Update loc:s) | isValue c = 
+  return ((c,e), (n,update loc (c,e) h), s)
 cem ((Var i v, e), h, s) = let (cl, e') = vlookup v e h in
   return (cl, h, Update e':s)
 cem ((App i m n, e), h, s) = 
@@ -104,19 +105,20 @@ cem ((World i, e), (n,h), Closure c:cs) =
   return (c, (n,h), Closure (World i,e):cs)
 cem ((Op i o, e), h, cs) = (\(t, cs') -> ((t, e), h, cs')) <$> 
   case o of     
-    LC.Syscall n -> (,cs) . Lit i . Just <$> syscall n [i | (Lit _ (Just i), e) <- take (n+1) $ env e h]
+    LC.Syscall n -> (,cs) . pair' i (World i) . Lit i . Just <$> syscall n [i | (Lit _ (Just i), e) <- take (n+1) $ env']
+      where (World _,_):env' = env e h
     LC.Write w -> case w of
-      LC.Word8 ->  pokeV (intPtrToPtr $ toEnum t) (toEnum t' :: Word8) >> return (labeled lid, cs)
-      LC.Word16 ->  pokeV (intPtrToPtr $ toEnum t) (toEnum t' :: Word16) >> return (labeled lid, cs)
-      LC.Word32 ->  pokeV (intPtrToPtr $ toEnum t) (toEnum t' :: Word32) >> return (labeled lid, cs)
-      LC.Word64 -> pokeV (intPtrToPtr $ toEnum t) (toEnum t' :: Word64) >> return (labeled lid, cs)
-      where (Lit _ (Just t), _):(Lit _ (Just t'), _):e' = env e h
+      LC.Word8 ->  pokeV (intPtrToPtr $ toEnum t) (toEnum t' :: Word8) >> return (pair' i (World i) (labeled lid), cs)
+      LC.Word16 ->  pokeV (intPtrToPtr $ toEnum t) (toEnum t' :: Word16) >> return (pair' i (World i) (labeled lid), cs)
+      LC.Word32 ->  pokeV (intPtrToPtr $ toEnum t) (toEnum t' :: Word32) >> return (pair' i (World i) (labeled lid), cs)
+      LC.Word64 -> pokeV (intPtrToPtr $ toEnum t) (toEnum t' :: Word64) >> return (pair' i (World i) (labeled lid), cs)
+      where (World _,_):(Lit _ (Just t), _):(Lit _ (Just t'), _):e' = env e h
     LC.Read w -> case w of
-      LC.Word8 -> (,cs) <$> (peekV (intPtrToPtr $ toEnum t) >>= return . Lit i . Just . (fromEnum :: Word8 -> Int))
-      LC.Word16 -> (,cs) <$> (peekV (intPtrToPtr $ toEnum t) >>= return . Lit i . Just . (fromEnum :: Word16 -> Int))
-      LC.Word32 -> (,cs) <$> (peekV (intPtrToPtr $ toEnum t) >>= return . Lit i . Just . (fromEnum :: Word32 -> Int))
-      LC.Word64 -> (,cs) <$> (peekV (intPtrToPtr $ toEnum t) >>= return . Lit i . Just . (fromEnum :: Word64 -> Int))
-      where (Lit _ (Just t), _):e' = env e h
+      LC.Word8 -> (,cs) <$> (peekV (intPtrToPtr $ toEnum t) >>= return . pair' i (World i) . Lit i . Just . (fromEnum :: Word8 -> Int))
+      LC.Word16 -> (,cs) <$> (peekV (intPtrToPtr $ toEnum t) >>= return . pair' i (World i) . Lit i . Just . (fromEnum :: Word16 -> Int))
+      LC.Word32 -> (,cs) <$> (peekV (intPtrToPtr $ toEnum t) >>= return . pair' i (World i) . Lit i . Just . (fromEnum :: Word32 -> Int))
+      LC.Word64 -> (,cs) <$> (peekV (intPtrToPtr $ toEnum t) >>= return . pair' i (World i) . Lit i . Just . (fromEnum :: Word64 -> Int))
+      where (World _,_):(Lit _ (Just t), _):e' = env e h
     a -> return $ (,cs) $ case a of 
       LC.Add -> Lit i $ (+) <$> arg1 <*> arg2
       LC.Sub -> Lit i $ (-) <$> arg1 <*> arg2
@@ -132,10 +134,12 @@ cem ((Op i o, e), h, cs) = (\(t, cs') -> ((t, e), h, cs')) <$>
       where (Lit _ arg2, _):(Lit _ arg1, _):e' = env e h
       where (Lit _ (Just t), _):(Lit _ (Just t'), _):e' = env e h
 
+pair' l f s = App l (App l (labeled pair) s) f
 toChurch b = if b then labeled true else labeled false
 
 traceCEM :: (CEMState -> IO ()) -> CEMState -> IO CEMState
 traceCEM pp m = case m of 
+  s@((World i, e), h, []) -> pp m >> return s
   s@((Lam i v e', e), h, []) -> pp m >> return s
   s@((Lit i l, e), h, []) -> pp m >> return s 
   _ -> pp m >> cem m >>= traceCEM pp

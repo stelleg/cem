@@ -73,7 +73,7 @@ pa <^ pb  = pa <* (notCode >> pb)
 infixl 4 <^>, <^, ^>
 
 parseProgram :: String -> SExpr 
-parseProgram s = parseSource lc $ "{" ++ s ++ "}" ++ "(main Ω)"
+parseProgram s = parseSource lc $ "{" ++ s ++ "}" ++ "(main Ω \\v.\\w.w)"
 
 parseSource :: Parser SExpr -> String -> SExpr
 parseSource p src = either (error.show) id . parse p "" $ src
@@ -123,6 +123,7 @@ nil = defParse "\\n.\\c.n"
 true = defParse "\\t.\\f.t"
 false = defParse "\\t.\\f.f"
 y = defParse "\\g.(\\x.[g x x] \\x.[g x x])"
+pair = defParse "\\f.\\s.\\p.(p f s)"
 
 charLit :: Parser (SExpr)
 charLit = Lit . fromEnum <$> (noneOf "\\\'\"" <|>

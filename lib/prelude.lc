@@ -26,6 +26,10 @@ Nil = True
 ; = Nil
 nil? = \l.(l True \h.\t.False)
 Pair = \f.\s.\p.(p f s)
+bind = \c.\f.\w.(c w f)
+>>= = bind
+>> = \c.\f.\w.(c w \v.f)
+return = Pair
 gcd = (Y \gcd.\a.\b.([b 0 =] a (gcd b [a b %])))
 lcm = \a.\b.(a * b / (gcd a b))
 even = \n.(n % 2 = 0)

@@ -1,6 +1,6 @@
-aux = (Y \aux.\n.[(Cons 1) (Cons n) (Cons 1) aux n 2 +])
+aux = (Y \aux.\n.[(: 1) (: n) (: 1) aux (n + 2)])
 
-eContFrac = [(Cons 2) aux 2]
+eContFrac = [(: 2) aux 2]
 
 ratTrans = (Y \ratTrans.\a.\b.\c.\d.\xs.(\q.(and
       (or [(signum c) (signum d) =] [(abs c) (abs d) <])

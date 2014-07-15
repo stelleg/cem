@@ -1,4 +1,4 @@
 # Looks up key/value pair
-dict = [(Cons (Pair "key" "value")) (Cons (Pair "PATH" "/usr/bin")) Nil]
+dict = [(: (Pair "key" "value")) (: (Pair "PATH" "/usr/bin")) ;]
 paths = (lookup "PATH" strcmp dict "path not found!" \x.x)
 main = (print paths)
