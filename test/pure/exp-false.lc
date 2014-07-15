@@ -1,4 +1,4 @@
-(\iszero.
+main = (\iszero.
   (\seven.
     (\ten.
       (iszero ((seven ten) ten))

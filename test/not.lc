@@ -1,1 +1,1 @@
-main = (putStrLn (not [3 4 =] "3 =! 4" "3 = 4"))
+main = (putStrLn (!= 3 4 "3 != 4" "3 = 4"))

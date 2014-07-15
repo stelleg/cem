@@ -42,4 +42,3 @@ deBruijn ls (Lam x t)   = Lam () <$> deBruijn ((x,0):map (fmap succ) ls) t
 deBruijn ls (App t1 t2) = App <$> (deBruijn ls t1) <*> (deBruijn ls t2)
 deBruijn ls (Lit l)     = Right $ Lit l
 deBruijn ls (Op o)      = Right $ Op o
-

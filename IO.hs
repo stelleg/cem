@@ -6,14 +6,13 @@ import Text.ParserCombinators.Parsec.Token
 import Text.ParserCombinators.Parsec.Prim (getPosition)
 import Data.Either
 import Data.Maybe
-import Data.Char (isSpace)
+import Data.Char (isSpace, isDigit)
 import qualified Data.ByteString.Lazy as B
 import Control.Monad
 import Control.Applicative hiding ((<|>), many)
 import Text.Printf
 import LC
 import qualified Data.Set as S
-
 
 -- OUTPUT
 instance Show Op where
@@ -58,7 +57,11 @@ instance Show (DBExpr) where
   show World = "Ω"
 
 -- INPUT
-word = (:) <$> letter <*> many (satisfy $ \c-> not (isSpace c || elem c "\\.()[]={}"))
+word :: Parser String
+word = (:) <$> satisfy (\c -> not (isSpace c || isDigit c || elem c "\'\"\\.#()[]{}_Ω"))
+       <*> many (satisfy $ \c-> not (isSpace c || elem c "\\.()[]{}#"))
+
+literal :: Parser Int
 literal = (read <$> many1 digit) :: Parser Int
 
 comment = char '#' >> skipMany (noneOf "\n") >> char '\n'
@@ -70,66 +73,55 @@ pa <^ pb  = pa <* (notCode >> pb)
 infixl 4 <^>, <^, ^>
 
 parseProgram :: String -> SExpr 
-parseProgram s = parseSource lc $ "{" ++ s ++ "}" ++ "main"
+parseProgram s = parseSource lc $ "{" ++ s ++ "}" ++ "(main Ω)"
 
 parseSource :: Parser SExpr -> String -> SExpr
 parseSource p src = either (error.show) id . parse p "" $ src
 
-lc :: Parser (SExpr)
+lc :: Parser SExpr
 lc =  Lam <$> ((char '\\' <|> char 'λ') *> word <* char '.') <^> lc
-  <|> Var <$> word
   <|> Lit <$> literal
   <|> Op  <$> op
+  <|> Var <$> word
   <|> World <$ char 'Ω'
   <|> char '(' ^> (foldl1 App <$> many1 (notCode *> lc <* notCode)) <^ char ')'
   <|> char '[' ^> (foldr1 App <$> many1 (notCode *> lc <* notCode)) <^ char ']'
   <|> char '\'' *> charLit <* char '\''
   <|> char '\"' *> (foldr (\h t -> App (App cons h) t) nil <$> many charLit) <* char '\"'
-  <|> char '{' ^> (lets <$> many1 (notCode *> binding <* notCode) <^> (char '}' ^> lc))
+  <|> char '{' ^> (lets <$> many (notCode *> binding <* notCode) <^> (char '}' ^> lc))
       where lets = flip $ foldr ($) 
             binding = mylet <$> word <^> (char '=' ^> lc)
             mylet var term body = App (Lam var body) term
 
-op = do
-  opstr <- (:) <$> oneOf "+-*/=<>%@;$!" <*> many (oneOf "+-*/=<>%@;$!qlbs")
-  case opstr of
-    ":" -> Call <$> word <*> literal
-    "!" -> Syscall <$> literal
-    s   -> return $ opString s
-   
-opString s = case s of
-  "+" -> Add
-  "-" -> Sub
-  "*" -> Mul
-  "/" -> Div
-  "%" -> Mod
-  "=" -> Eq
-  "/=" -> Neq
-  "<" -> Lt
-  ">" -> Gt
-  "<=" -> Le
-  ">=" -> Ge
-  ['@',w] -> Write $ wordSizeChar w
-  ['$',w] -> Read $ wordSizeChar w
-  other -> error other
-
-wordSizeChar c = case c of 
-  'b' -> Word8
-  's' -> Word16
-  'l' -> Word32
-  'q' -> Word64
-
+op :: Parser Op
+op = char '_' >> op' where
+  op' = (char '+' >> return Add)
+    <|> (char '-' >> return Sub)
+    <|> (char '*' >> return Mul)
+    <|> (char '/' >> return Div)
+    <|> (char '%' >> return Mod)
+    <|> (string "\\=" >> return Neq)
+    <|> (char '=' >> return Eq)
+    <|> try (string "<=" >> return Le)
+    <|> try (string ">=" >> return Ge)
+    <|> (char '<' >> return Lt)
+    <|> (char '>' >> return Gt)
+    <|> (char ':' >> Call <$> word <*> literal)
+    <|> (char '!' >> Syscall <$> literal)
+    <|> (char '@' >> Write <$> wordSizeChar)
+    <|> (char '$' >> Read <$> wordSizeChar)
+  wordSizeChar = (char 'b' >> return Word8)
+             <|> (char 's' >> return Word16)
+             <|> (char 'l' >> return Word32)
+             <|> (char 'q' >> return Word64)
+               
 -- Useful expressions
 defParse = parseSource lc
-
 lid = defParse "\\x.x"
-
 cons = defParse "\\h.\\t.\\n.\\c.(c h t)"
 nil = defParse "\\n.\\c.n"
-
 true = defParse "\\t.\\f.t"
 false = defParse "\\t.\\f.f"
-
 y = defParse "\\g.(\\x.[g x x] \\x.[g x x])"
 
 charLit :: Parser (SExpr)
@@ -187,7 +179,7 @@ toMacro n i s = case i of
 syscallregs = ["%rdi", "%rsi", "%rdx", "%r10", "%r8", "%r9"]
 
 compile :: DBExpr -> [Instr]
---compile (Lam _ e) | bound 0 e == 0 = POP : compile (dec 0 e)
+compile (Lam _ e) | bound 0 e == 0 = POP : compile (dec 0 e)
 compile (Lam _ e)  = TAKE : compile e
 compile (Var i)    = [ENTER i]
 compile (App m n)  = PUSH (length ms + 1) : ms ++ compile n where ms = compile m
