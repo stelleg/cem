@@ -1,17 +1,17 @@
 carryPropagate = (Y \carryPropagate.\base.\l.(l PME \d.\ds.{
-    carryguess = [d base /]
-    remainder = [d base %]
-    cont = (carryPropagate [base 1 +] ds)
+    carryguess = (d / base)
+    remainder = (d % base)
+    cont = (carryPropagate (base + 1) ds)
     nextcarry = (head cont) 
     fraction = (tail cont)
-    dCorrected = [d nextcarry +] 
-  }
-  ([carryguess [[d 9 +] base /] =]
-      [(Cons carryguess) (Cons [remainder nextcarry +]) fraction]
-      [(Cons [dCorrected base /]) (Cons [dCorrected base %]) fraction])))
+    dCorrected = (d + nextcarry)
+  } 
+  (carryguess = (d + 9 / base)
+    [(Cons carryguess) (Cons (remainder + nextcarry)) fraction]
+    [(Cons (dCorrected / base)) (Cons (dCorrected % base)) fraction])))
    
 e = [(map head)
-     (iterate (compose (carryPropagate 2) (compose (map \x.[10 x *]) tail)))
+     [iterate [compose carryPropagate 2] [compose map * 10] tail]
      (Cons 2) repeat 1]
      
-main = [putStrLn [take readInt head getArgs] (concatMap showInt) e]
+main = [putStrLn (take 100) (concatMap showInt) e]

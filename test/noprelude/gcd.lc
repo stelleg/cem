@@ -1,4 +1,4 @@
 Y = \g.(\x.[g x x] \x.[g x x])
-gcd = (Y \gcd.\a.\b.([b 0 =] a (gcd b [a b %])))
+gcd = (Y \gcd.\a.\b.((b = 0) a (gcd b (a % b))))
 
-(gcd 25 10)
+main = \w.(gcd 25 10)

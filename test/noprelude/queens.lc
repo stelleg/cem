@@ -1,10 +1,10 @@
-nq = [readInt head getArgs]
+nq = 4
 safe = (Y \safe.\x.\d.\qs.(qs True 
-  \q.\l.[(and (not [x q =]))
-         (and (not [x [q d +] =]))
-         (and (not [x [q d -] =]))
-         (safe x [d 1 +] l)]))
-gen = (Y \gen.\n.([n 0 =] (Cons Nil Nil) (concatMap \b.(concatMap \q.(safe q 1 b 
-  (Cons (Cons q b) Nil) Nil) (range 1 nq)) (gen [n 1 -]))))
+  \q.\l.[(and (x != q))
+         (and (x != (q + d)))
+         (and (x != (q - d)))
+         (safe x (d + 1) l)]))
+gen = (Y \gen.\n.(n = 0 (Cons Nil Nil) (concatMap \b.(concatMap \q.(safe q 1 b 
+  (Cons (Cons q b) Nil) Nil) (range 1 nq)) (gen (n - 1)))))
 
-[putStrLn showInt length gen nq]
+main = [putStrLn showInt length gen nq]
