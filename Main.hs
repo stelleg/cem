@@ -16,7 +16,7 @@ libs = mapM getDataFileName ["lib/prelude.lc", "lib/os.lc", "lib/church.lc"]
 parseArgs :: [String] -> IO ()
 parseArgs [] = usage
 parseArgs (('-':o:opts):sources) = parseOpts (o:opts) sources
-parseArgs sources = parseOpts "lc" sources
+parseArgs sources = parseOpts "lr" sources
 
 parseOpts :: String -> [String] -> IO ()
 parseOpts ('l':o) sources = do srclibs <- libs; parseOpts o (srclibs ++ sources)

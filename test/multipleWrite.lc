@@ -1,4 +1,1 @@
-main = [
-  (putStrLn "Hello world") then
-  (putStrLn "Oh hello again")
-]
+main = (>> (print "hi") (print "world"))

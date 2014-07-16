@@ -1,1 +1,1 @@
-main = (mapm \i.[print showInt i] (iterate \x.[x 1 +] 0))
+main = (for (range 0 10) (compose print showInt))

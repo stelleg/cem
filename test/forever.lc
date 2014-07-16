@@ -1,1 +1,1 @@
-main = (forever \world.[print getLine world] initWorld)
+main = (forever (>>= getLine print))

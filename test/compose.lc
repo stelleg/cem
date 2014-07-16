@@ -1,1 +1,1 @@
-main = (compose \y.[3 y *] \x.[1 x +] 0)
+main = [sys_exit (∘ (* 3) (+ 4)) 5]

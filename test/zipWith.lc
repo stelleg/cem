@@ -1,3 +1,2 @@
-main = (mapm \i.[print showInt i] (take 20 (zipWith \x.\y.[x y *] 
-  (from 1)
-  (iterate \x.[2 x *] 1))))
+nums = (zipWith * (range 10 20) (iterate (* 2) 1))
+main = (for nums (∘ print showInt))

@@ -1,1 +1,1 @@
-main = (putStrLn ([7 [4 3 +] =] "Correct" "Incorrect"))
+main = (putStrLn (4 + 3 = 7 "Correct" "Incorrect"))

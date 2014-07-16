@@ -1,1 +1,2 @@
-main = (>>= getLine print)
+main = (>> (putStr "Enter some text: ")
+       (>>= getLine (printf "you entered %s")))

@@ -1,0 +1,1 @@
+main = (for "hello" \c.(print (: c ;)))
