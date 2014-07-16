@@ -55,7 +55,7 @@ graph s = do
 partial :: (VM.CEMState -> IO ()) -> String -> IO ()
 partial f s = do ((c,e), h, s) <- VM.traceCEM f . (\e->((e,0),(0,M.empty),[])) $ VM.labeled $ IO.parseProgram s
                  case c of
-                   VM.Lit _ (Just i) -> exitWith (ExitFailure i)
+                   VM.World _ -> exitSuccess
                    _ -> exitWith (ExitFailure 255)
 
 freevars :: String -> IO ()
