@@ -1,5 +1,3 @@
-main = [
-  (putStrLn "Going to sleep now...") then
-  (sleep 1 0) then 
-  (putStrLn "Slept for one second")
-]
+main = (>> (putStrLn "Going to sleep now...")
+       (>> (sleep 1 0)
+       (putStrLn "How long was I asleep?")))

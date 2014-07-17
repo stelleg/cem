@@ -1,1 +1,1 @@
-main = [putStrLn (concatMap showInt) 10]
+main = [putStrLn (concatMap showInt) (: 10) (: 20) ;]

@@ -1,4 +1,8 @@
 # Looks up key/value pair
-dict = [(: (Pair "key" "value")) (: (Pair "PATH" "/usr/bin")) ;]
-paths = (lookup "PATH" strcmp dict "path not found!" \x.x)
-main = (print paths)
+dict = {dict = (Y \dict.\acc.\k.(nil? k acc \v.(dict (: (Pair k v) acc))))} (dict ;) 
+env = (dict "key" "value" 
+            "newkey" "newvalue"
+            "thirdkey" "thirdvalue" ;)
+val = (lookup "newkey" strcmp env "newkey not found!" \x.x)
+
+main = (print val)

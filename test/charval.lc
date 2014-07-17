@@ -1,1 +1,1 @@
-main = [putStrLn showInt '\n']
+main = (printf "%d" '\n')
