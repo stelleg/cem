@@ -1,6 +1,6 @@
-showEquality = \x.\y.(printf ([x y =] "%d = %d" "%d /= %d") x y)
+showEquality = \x.\y.(printf (x = y "%d = %d" "%d /= %d") x y)
 
-main = [
-  (length getArgs (2 /=) (error "usage: eq n m"))
-  putStrLn (applyFromList showEquality) (map readInt) getArgs
-]
+main = (>> (putStr "Enter two numbers: ")
+       (>>= getLine \l.
+       [print (applyFromList showEquality) (map readInt) words l]))
+

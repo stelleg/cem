@@ -82,9 +82,9 @@ forever = \c.(Y \forever.(>> c forever))
 isSpace = \c.(any (= c) " \n\t\r")
 partition = \f.(Y \partition.\s.\acc.(s (Pair acc Nil) \h.\t.(f h (Pair acc s)
     (partition t (append acc))))) 
-splitWhen = (Y \splitWhen.\f.\xs.(split f xs \l.\r.(r 
-  (l Nil \h.\t.(Cons l Nil))
-  \h.\t.(Cons l (splitWhen f r)))))
+splitWhen = \f.(Y \splitWhen.\xs.(split f xs \l.\r.(r 
+  (l ; \h.\t.(: l ;))
+  \h.\t.{cont = (splitWhen r)}(l cont \h.\t.(: l cont)))))
 words = (splitWhen isSpace)
 intersperse = \v.(Y \intersperse.\l.(l l \h.\t.(t l 
   \h'.\t'.[(: h) (: v) intersperse t])))
@@ -101,10 +101,11 @@ applyFromList = (Y \al.\f.\l.(l f \h.\t.(al (f h) t)))
 signum = \n.(n = 0 0 (n > 0 1) (-' 1))
 abs = \n.(n < 0 (0 - n) n)
 zipWith = \f.(Y \zipWith.\as.\bs.(as Nil \a.\at.(bs Nil \b.\bt.
-  (Cons (f a b) (zipWith at bt)))))
+  (: (f a b) (zipWith at bt)))))
 zip = (zipWith Pair)
 for = \as.\f.(Y \for.\as.(as (return id) \a.\as.(>> (f a) (for as))) as)
-strcmp = \s.\s'.(all id (zipWith \x.\y.[x y =] s s'))
+mapm = (flip for)
+strcmp = \s.\s'.(all id (zipWith = s s'))
 lookup = \elem.\eqfun.(Y \lookup.\l.(l 
   Nothing 
   \h.\t.(h \key.\value.(eqfun elem key
