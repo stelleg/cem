@@ -1,4 +1,7 @@
+# Recursion!
 Y = \g.(\x.[g x x] \x.[g x x])
+
+# Arithmetic
 + = \n.\m.[m n \n.\m._+]
 - = \n.\m.[m n \n.\m._-]
 -' = (0 -)
@@ -11,25 +14,39 @@ Y = \g.(\x.[g x x] \x.[g x x])
 <= = \n.\m.[m n \n.\m._<=]
 < = \n.\m.[m n \n.\m._<]
 > = \n.\m.[m n \n.\m._>]
+
+# Booleans
 False = \t.\f.f
 True = \t.\f.t
 and = \a.\b.(a b False)
 or = \a.\b.(a True b)
 not = \a.(a False True)
+
+# Maybe
 Nothing = \n.\j.n
 Just = \a.\n.\j.(j a)
+
+# Either 
 Left = \v.\l.\r.(l v)
 Right = \v.\l.\r.(r v)
+
+# Lists
 Cons = \h.\t.\n.\c.(c h t)
 : = Cons
 Nil = True
 ; = Nil
 nil? = \l.(l True \h.\t.False)
+
+# Tuple
 Pair = \f.\s.\p.(p f s)
+
+# Monad
 bind = \c.\f.\w.(c w f)
 >>= = bind
 >> = \c.\f.\w.(c w \v.f)
 return = Pair
+
+# Random functions
 gcd = (Y \gcd.\a.\b.([b 0 =] a (gcd b [a b %])))
 lcm = \a.\b.(a * b / (gcd a b))
 even = \n.(n % 2 = 0)
@@ -37,12 +54,11 @@ odd = \n.(n % 2 = 1)
 id = \x.x
 const = True
 compose = \f.\g.\x.[f g x]
-∘ = compose
 apply = \f.\x.(f x)
 flip = \f.\b.\a.(f a b)
-until = (Y \until.\p.\f.\x.(p x x (until p f (f x))))
+until = (Y \until.\p.\f.\x.(p x x (until p f (f x)))) 
 map = (Y \map.\f.\xs.(xs Nil \h.\t.(Cons (f h) (map f t))))
-null = \l.(l True \x.\xs.False)
+null = nil? 
 length = \xs.(Y \length.\xs.\acc.(xs acc \h.\t.(length t (acc + 1))) xs 0)
 foldl = (Y \foldl.\f.\a.\bs.(bs a \b.\bs.(foldl f (f a b) bs)))
 foldr = (Y \foldr.\f.\a.\bs.(bs a \b.\bs.(f b (foldr f a bs))))
@@ -111,3 +127,7 @@ lookup = \elem.\eqfun.(Y \lookup.\l.(l
   \h.\t.(h \key.\value.(eqfun elem key
     (Just value)
     (lookup t)))))
+
+# Fun unicode synonyms
+∘ = compose
+
