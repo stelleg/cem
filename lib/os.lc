@@ -30,11 +30,26 @@ malloc = \len.(sys_mmap 0 len 255 34 (-' 1) 0)
 free = \ptr.(sys_munmap ptr 1)
 sleep = \sec.\nsec.(malloc 2 \p.[(mvq sec p) (mvq nsec (p + 8)) (sys_nanosleep p p) \r.(free p \r'.r)])
 newPage = (malloc pageSize)
+read-utf8-char-from-buf = \p.(>>= (rdb p) \c1.
+  (c1 / 128 = 0 (return (pair c1 1)) (>>= (rdb (p + 1)) \c2.{c2' = (2 ^ 8 * c2 + c1)}
+  (c2 / 128 = 0 (return (pair c2' 2)) (>>= (rdb (p + 2)) \c3.{c3' = (2 ^ 16 * c3 + c2')}  
+  (c3 / 128 = 0 (return (pair c3' 3)) (>>= (rdb (p + 3)) \c4.
+  (return (pair (2 ^ 24 * c4 + c3') 4)))))))))
+write-utf8-char-to-buf = \c.\p.[
+  (c >= (2 ^ 24) (>> (mvl c p) (return 4)))
+  (c >= (2 ^ 16) (>> (mvs c p) (>> (mvb (c / (2 ^ 16)) (p + 2)) (return 3))))
+  (c >= (2 ^ 8)  (>> (mvs c p) (return 2)))
+  (>> (mvb c p) (return 1))]
+readStrBuf = (Y \rstr.\loc.\n.(n = 0
+  (return nil)
+  (>>= (read-utf8-char-from-buf loc) \p.(p \c.\n'.(c = 0 
+    (return ;)
+    (>>= (rstr (loc + n') (n - 1)) \s.(return (: c s))))))))
 putStrBuf = \size.\buf.(Y \putStrBuf.\loc.\s.{finished = (>> (mvb 0 loc) (return (pair (loc + 1) nil)))}(s
   finished
   \h.\t.(loc - buf >= size
     finished 
-    (>> (mvb h loc) (putStrBuf (loc + 1) t)))) buf)
+    (>>= (write-utf8-char-to-buf h loc) \n.(putStrBuf (loc + n) t)))) buf)
 open = \fname.(>>= newPage \nameBuf.(
   >> (putStrBuf pageSize nameBuf fname)
   (sys_open nameBuf 577 420)))
@@ -46,11 +61,6 @@ readPtrBuf = (Y \rstr.\loc.\n.(n <= 0
   (>>= (rd loc) \p.(p = 0
     (return nil)
     (>>= (rstr (loc + 8) (n - 1)) \s.(return (: p s)))))))
-readStrBuf = (Y \rstr.\loc.\n.(n <= 0
-  (return nil)
-  (>>= (rdb loc) \c.(c = 0 
-    (return nil) 
-    (>>= (rstr (loc + 1) (n - 1)) \s.(return (: c s)))))))
 writeFd = \fd.\str.(>>= newPage \iobuf.(>> (Y \writeFd.\str.(
   >>= (putStrBuf pageSize iobuf str) \p.(p \p.\s.(
   >>= (sys_write fd iobuf (p - iobuf)) \n.(

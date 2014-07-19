@@ -1,1 +1,1 @@
-main = [putStr getContents]
+main = (>>= getContents putStr)

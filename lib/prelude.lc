@@ -14,6 +14,7 @@ Y = \g.(\x.[g x x] \x.[g x x])
 <= = \n.\m.[m n \n.\m._<=]
 < = \n.\m.[m n \n.\m._<]
 > = \n.\m.[m n \n.\m._>]
+^ = \n.(Y \^.\n'.\m.(m = 0 n' (^ (n * n') (m - 1))) 1)
 
 # Booleans
 false = \t.\f.f
