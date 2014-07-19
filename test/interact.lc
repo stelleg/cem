@@ -1,1 +1,1 @@
-main = [interact map \x.[x 1 +]]
+main = [interact map + 1]

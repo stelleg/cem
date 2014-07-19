@@ -30,7 +30,7 @@ malloc = \len.(sys_mmap 0 len 255 34 (-' 1) 0)
 free = \ptr.(sys_munmap ptr 1)
 sleep = \sec.\nsec.(malloc 2 \p.[(mvq sec p) (mvq nsec (p + 8)) (sys_nanosleep p p) \r.(free p \r'.r)])
 newPage = (malloc pageSize)
-putStrBuf = \size.\buf.(Y \putStrBuf.\loc.\s.{finished = (>> (mvb 0 loc) (return (Pair (loc + 1) Nil)))}(s
+putStrBuf = \size.\buf.(Y \putStrBuf.\loc.\s.{finished = (>> (mvb 0 loc) (return (pair (loc + 1) nil)))}(s
   finished
   \h.\t.(loc - buf >= size
     finished 
@@ -42,14 +42,14 @@ putPtrBuf = (Y \putPtrBuf.\loc.\s.(s
   (>> (mv nil loc) (return (loc + 8)))
   \h.\t.(>> (mv h loc) (putPtrBuf (loc + 8) t))))
 readPtrBuf = (Y \rstr.\loc.\n.(n <= 0
-  (return Nil)
+  (return nil)
   (>>= (rd loc) \p.(p = 0
-    (return Nil)
+    (return nil)
     (>>= (rstr (loc + 8) (n - 1)) \s.(return (: p s)))))))
 readStrBuf = (Y \rstr.\loc.\n.(n <= 0
-  (return Nil)
+  (return nil)
   (>>= (rdb loc) \c.(c = 0 
-    (return Nil) 
+    (return nil) 
     (>>= (rstr (loc + 1) (n - 1)) \s.(return (: c s)))))))
 writeFd = \fd.\str.(>>= newPage \iobuf.(>> (Y \writeFd.\str.(
   >>= (putStrBuf pageSize iobuf str) \p.(p \p.\s.(
@@ -64,8 +64,8 @@ readFd = \fd.(>>= newPage \iobuf.(Y \readFd.(
   >>= (sys_read fd iobuf pageSize) \n.(
   n >= pageSize 
     (>>= (readStrBuf iobuf n) \s.(s
-      (return Nil)
-      \h.\t.(>>= readFd (append (Cons h t)))))
+      (return nil)
+      \h.\t.(>>= readFd (append (cons h t)))))
     (readStrBuf iobuf n)))))
 readFile = \fname.\str.(>>= newPage \iobuf.(
   >>= (open fname) \fd.(
@@ -95,22 +95,23 @@ snd = (index 2 2)
 sprintf_ = \k.(Y \printf.\acc.\l.(l (k acc) \h.\t.(h = '%'
   (t (error "misformed format") \h.\t'.[
     (h = 'd' \i.(printf (append acc (showInt i)) t'))
-    (h = 'c' \c.(printf (append acc (Cons c Nil)) t'))
+    (h = 'c' \c.(printf (append acc (cons c nil)) t'))
     (h = 's' \s.(printf (append acc s) t'))
+    (h = 'b' \b.(printf (append acc (showBool b)) t'))
     (error "misformed format")])
-  (printf (append acc (Cons h Nil)) t))) Nil)
+  (printf (append acc (cons h nil)) t))) nil)
 sprintf = (sprintf_ id)
 printf = (sprintf_ print)
 putWords = (Y \putWords.\ws.\loc.(ws
-  (Pair loc Nil)
+  (pair loc nil)
   \w.\ws.(putStrBuf 1024 loc w
-    \loc'.\str.(putWords ws loc' \loc''.\ws.(Pair loc'' (Cons loc ws))))))
+    \loc'.\str.(putWords ws loc' \loc''.\ws.(pair loc'' (cons loc ws))))))
 exec = \fname.\argv.{buf = (newPage nil)}[
   (putStrBuf pageSize buf fname) \l.\str.
   (putWords argv l \al.\alocs.
-  (putPtrBuf al (Cons buf alocs) \l.
+  (putPtrBuf al (cons buf alocs) \l.
   (putWords argv l \el.\elocs.
-  (putPtrBuf el (Cons buf elocs) \l.
+  (putPtrBuf el (cons buf elocs) \l.
   (sys_execve buf al el)))))
 ]
 

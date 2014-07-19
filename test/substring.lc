@@ -1,4 +1,4 @@
-substring = (Y \ss.\w.\s.(w True \wh.\wt.(s False \sh.\st.
+substring = (Y \ss.\w.\s.(w true \wh.\wt.(s false \sh.\st.
   (or (ss w st)
       (and [wh sh =] (ss wt st))))))
 

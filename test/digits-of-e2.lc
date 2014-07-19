@@ -7,11 +7,11 @@ carryPropagate = (Y \carryPropagate.\base.\l.(l PME \d.\ds.{
     dCorrected = (d + nextcarry)
   } 
   (carryguess = (d + 9 / base)
-    [(Cons carryguess) (Cons (remainder + nextcarry)) fraction]
-    [(Cons (dCorrected / base)) (Cons (dCorrected % base)) fraction])))
+    [(cons carryguess) (cons (remainder + nextcarry)) fraction]
+    [(cons (dCorrected / base)) (cons (dCorrected % base)) fraction])))
    
 e = [(map head)
      [iterate [compose carryPropagate 2] [compose map * 10] tail]
-     (Cons 2) repeat 1]
+     (cons 2) repeat 1]
      
 main = [putStrLn (take 100) (concatMap showInt) e]

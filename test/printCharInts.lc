@@ -1,1 +1,1 @@
-main = [putStrLn concat (map (compose (Cons ' ') showInt) "Hello")]
+main = [putStrLn concat (map (compose (cons ' ') showInt) "Hello")]

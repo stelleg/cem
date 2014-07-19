@@ -5,7 +5,7 @@ ls = \dirname.{dirents = (newPage 1)} (open dirname \fd.([print showInt fd] \n.(
 
 # pipe system call
 sys_pipe = \fdes.[fdes 22 !1]
-pipe = \w.{fdes = (newPage w)} (sys_pipe fdes \n.[(rdl fdes) [rdl fdes 4 +] Pair])
+pipe = \w.{fdes = (newPage w)} (sys_pipe fdes \n.[(rdl fdes) [rdl fdes 4 +] pair])
 
 # Shell takes a line and executes it after splitting it into words
 shell = \line.(words line nil \cmd.\args.(fork nil (0 =)
@@ -22,7 +22,7 @@ commands = (mapm \c.[shell (append "/usr/bin/ls ") c] paths)
 # Quits on ctrl-d (eof), otherwise returns the line
 getLineOrQuit = \world.(takeWhile \c.[c '\n' /=] (readFd 0 world
   (error "goodbye")
-  Cons))
+  cons))
 
 # Loops forever on getLines and shells
 main = (forever \world.[

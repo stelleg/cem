@@ -1,1 +1,1 @@
-main = ([putStrLn showInt length "Hello world"] \l.0)
+main = [putStrLn showInt length "Hello world"]

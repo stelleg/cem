@@ -1,1 +1,1 @@
-main = (putStrLn (filter \c.(not [c 'n' =]) "Hen"))
+main = (putStrLn (filter (!= 'n') "Hen"))

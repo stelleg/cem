@@ -16,11 +16,11 @@ Y = \g.(\x.[g x x] \x.[g x x])
 > = \n.\m.[m n \n.\m._>]
 
 # Booleans
-False = \t.\f.f
-True = \t.\f.t
-and = \a.\b.(a b False)
-or = \a.\b.(a True b)
-not = \a.(a False True)
+false = \t.\f.f
+true = \t.\f.t
+and = \a.\b.(a b false)
+or = \a.\b.(a true b)
+not = \a.(a false true)
 
 # Maybe
 Nothing = \n.\j.n
@@ -31,20 +31,20 @@ Left = \v.\l.\r.(l v)
 Right = \v.\l.\r.(r v)
 
 # Lists
-Cons = \h.\t.\n.\c.(c h t)
-: = Cons
-Nil = True
-; = Nil
-nil? = \l.(l True \h.\t.False)
+cons = \h.\t.\n.\c.(c h t)
+: = cons
+nil = true
+; = nil
+nil? = \l.(l true \h.\t.false)
 
 # Tuple
-Pair = \f.\s.\p.(p f s)
+pair = \f.\s.\p.(p f s)
 
 # Monad
 bind = \c.\f.\w.(c w f)
 >>= = bind
 >> = \c.\f.\w.(c w \v.f)
-return = Pair
+return = pair
 
 # Random functions
 gcd = (Y \gcd.\a.\b.([b 0 =] a (gcd b [a b %])))
@@ -52,51 +52,51 @@ lcm = \a.\b.(a * b / (gcd a b))
 even = \n.(n % 2 = 0)
 odd = \n.(n % 2 = 1)
 id = \x.x
-const = True
+const = true
 compose = \f.\g.\x.[f g x]
 apply = \f.\x.(f x)
 flip = \f.\b.\a.(f a b)
 until = (Y \until.\p.\f.\x.(p x x (until p f (f x)))) 
-map = (Y \map.\f.\xs.(xs Nil \h.\t.(Cons (f h) (map f t))))
+map = (Y \map.\f.\xs.(xs nil \h.\t.(cons (f h) (map f t))))
 null = nil? 
 length = \xs.(Y \length.\xs.\acc.(xs acc \h.\t.(length t (acc + 1))) xs 0)
 foldl = (Y \foldl.\f.\a.\bs.(bs a \b.\bs.(foldl f (f a b) bs)))
 foldr = (Y \foldr.\f.\a.\bs.(bs a \b.\bs.(f b (foldr f a bs))))
-append = \as.\bs.(foldr Cons bs as)
-reverse = (foldl (flip Cons) Nil) 
-any = \p.\xs.(foldr or False (map p xs))
-all = \p.\xs.(foldr and True (map p xs))
-concat = (foldr append Nil)
-concatMap = \f.(foldr (compose append f) Nil)
-filter = \c.(Y \filter.\ls.(ls Nil \h.\t.(c h (Cons h) id (filter t))))
-scanl = (Y \scanl.\f.\q.\ls.(Cons q (ls Nil \x.\xs.(scanl f (f q x) xs))))
-scanr = (Y \scanr.\f.\q.\ls.(Cons q (ls (Cons q Nil) \x.\xs.(scanr f x q Nil \q.\qs.(Cons (f x q))))))
-iterate = (Y \iterate.\f.\x.(Cons x (iterate f (f x))))
+append = \as.\bs.(foldr cons bs as)
+reverse = (foldl (flip cons) nil) 
+any = \p.\xs.(foldr or false (map p xs))
+all = \p.\xs.(foldr and true (map p xs))
+concat = (foldr append nil)
+concatMap = \f.(foldr (compose append f) nil)
+filter = \c.(Y \filter.\ls.(ls nil \h.\t.(c h (cons h) id (filter t))))
+scanl = (Y \scanl.\f.\q.\ls.(cons q (ls nil \x.\xs.(scanl f (f q x) xs))))
+scanr = (Y \scanr.\f.\q.\ls.(cons q (ls (cons q nil) \x.\xs.(scanr f x q nil \q.\qs.(cons (f x q))))))
+iterate = (Y \iterate.\f.\x.(cons x (iterate f (f x))))
 repeat = (iterate id)
 take = (Y \take.\n.\xs.(xs ; \x.\xs.(n <= 0 ; (: x (take (n - 1) xs)))))
 replicate = \n.\x.(take n (repeat x))
 cycle = \xs.[concat repeat xs]
 drop = (Y \drop.\n.\xs.(xs ; \x.\xs.(n = 1 xs (drop (n - 1) xs))))
 tail = (drop 1)
-splitAt = \n.\xs.(Pair (take n xs) (drop n xs))
-takeWhile = (Y \takeWhile.\f.\xs.(xs Nil \x.\xs.(f x (Cons x (takeWhile f xs)) Nil)))
-dropWhile = (Y \dropWhile.\f.\xs.(xs Nil \x.\xs.(f x (dropWhile f xs) (Cons x xs))))
-split = \f.(Y \split.\xs.(xs (Pair Nil Nil) \h.\t.(f h 
-  (Pair Nil t)
-  (split t \acc.\rem.(Pair (Cons h acc) rem)))))
+splitAt = \n.\xs.(pair (take n xs) (drop n xs))
+takeWhile = (Y \takeWhile.\f.\xs.(xs nil \x.\xs.(f x (cons x (takeWhile f xs)) nil)))
+dropWhile = (Y \dropWhile.\f.\xs.(xs nil \x.\xs.(f x (dropWhile f xs) (cons x xs))))
+split = \f.(Y \split.\xs.(xs (pair nil nil) \h.\t.(f h 
+  (pair nil t)
+  (split t \acc.\rem.(pair (cons h acc) rem)))))
 showInt = \i.{showPosInt = (compose reverse (Y \showPosInt.\i.(i = 0
-    Nil 
-    (Cons (i % 10 + 48) (showPosInt (i / 10))))))} [
+    nil 
+    (cons (i % 10 + 48) (showPosInt (i / 10))))))} [
   (i = 0 "0") 
-  (i < 0 (Cons '-' (showPosInt (0 - i))))
+  (i < 0 (cons '-' (showPosInt (0 - i))))
   (showPosInt i)
 ]
 readInt = (compose (Y \readInt.\n.(n 0 \h.\t.(h - 48 + (readInt t * 10))))
   (compose reverse (takeWhile \h.(and (h >= 48) (h < 58)))))
-showBool = \b.(b "True" "False")
+showBool = \b.(b "true" "false")
 forever = \c.(Y \forever.(>> c forever))
 isSpace = \c.(any (= c) " \n\t\r")
-partition = \f.(Y \partition.\s.\acc.(s (Pair acc Nil) \h.\t.(f h (Pair acc s)
+partition = \f.(Y \partition.\s.\acc.(s (pair acc nil) \h.\t.(f h (pair acc s)
     (partition t (append acc))))) 
 splitWhen = \f.(Y \splitWhen.\xs.(split f xs \l.\r.(r 
   (l ; \h.\t.(: l ;))
@@ -116,9 +116,9 @@ unlines = (concatMap (flip append "\n"))
 applyFromList = (Y \al.\f.\l.(l f \h.\t.(al (f h) t))) 
 signum = \n.(n = 0 0 (n > 0 1 (-' 1)))
 abs = \n.(n < 0 (0 - n) n)
-zipWith = \f.(Y \zipWith.\as.\bs.(as Nil \a.\at.(bs Nil \b.\bt.
+zipWith = \f.(Y \zipWith.\as.\bs.(as nil \a.\at.(bs nil \b.\bt.
   (: (f a b) (zipWith at bt)))))
-zip = (zipWith Pair)
+zip = (zipWith pair)
 for = \as.\f.(Y \for.\as.(as (return id) \a.\as.(>> (f a) (for as))) as)
 mapm = (flip for)
 strcmp = \s.\s'.(all id (zipWith = s s'))

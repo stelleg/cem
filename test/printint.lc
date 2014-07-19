@@ -1,1 +1,0 @@
-main = [putStrLn showInt 586]

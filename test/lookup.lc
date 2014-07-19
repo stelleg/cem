@@ -1,5 +1,5 @@
 # Looks up key/value pair
-dict = {dict = (Y \dict.\acc.\k.(nil? k acc \v.(dict (: (Pair k v) acc))))} (dict ;) 
+dict = {dict = (Y \dict.\acc.\k.(nil? k acc \v.(dict (cons (pair k v) acc))))} (dict nil) 
 env = (dict "key" "value" 
             "newkey" "newvalue"
             "thirdkey" "thirdvalue" ;)

@@ -1,10 +1,10 @@
 nq = 4
-safe = (Y \safe.\x.\d.\qs.(qs True 
+safe = (Y \safe.\x.\d.\qs.(qs true 
   \q.\l.[(and (x != q))
          (and (x != (q + d)))
          (and (x != (q - d)))
          (safe x (d + 1) l)]))
-gen = (Y \gen.\n.(n = 0 (Cons Nil Nil) (concatMap \b.(concatMap \q.(safe q 1 b 
-  (Cons (Cons q b) Nil) Nil) (range 1 nq)) (gen (n - 1)))))
+gen = (Y \gen.\n.(n = 0 (cons nil nil) (concatMap \b.(concatMap \q.(safe q 1 b 
+  (cons (cons q b) nil) nil) (range 1 nq)) (gen (n - 1)))))
 
 main = [putStrLn showInt length gen nq]

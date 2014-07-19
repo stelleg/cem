@@ -1,3 +1,0 @@
-mmap = \addr.\len.\prot.\flags.\fd.\offset.[addr len prot flags fd offset 9 !6]
-
-main = (mmap 0 4096 255 34 [0 1 -] 0)

@@ -1,1 +1,1 @@
-main = (putStrLn (foldr Cons Nil "Hello fold."))
+main = (putStrLn (foldr cons nil "Hello fold."))

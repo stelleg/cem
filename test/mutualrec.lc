@@ -1,8 +1,13 @@
-f = (Y \f.{odd = (f fst) even = (f snd)} 
-  \p.(p
-    \n.([n 0 =] False (even [n 1 -]))
-    \n.([n 0 =] True (odd [n 1 -]))))
+fst = \p.(p true)
+snd = \p.(p false)
 
-odd = (f fst) even = (f snd)
+f = (Y \f.{odd = (fst f) even = (snd f)} 
+  (pair
+    \n.(n = 0 false (even (n - 1)))
+    \n.(n = 0 true (odd (n - 1)))))
 
-main = [putStrLn showBool odd readInt head getArgs]
+odd = (fst f) even = (snd f)
+
+main = (>> (putStr "Enter number: ")
+       (>>= getLine \i.
+       [(printf "%s is odd: %b" i) showBool odd readInt i]))

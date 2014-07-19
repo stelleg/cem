@@ -1,11 +1,11 @@
 nq = [readInt head getArgs]
 range = (map church (range 1 nq))
-safe = (Y \safe.\x.\d.\qs.(qs True 
+safe = (Y \safe.\x.\d.\qs.(qs true 
   \q.\l.[(and (not (equal x q)))
          (and (not (equal x (add q d))))
          (and (not (equal x (sub q d))))
          (safe x (succ d) l)]))
-gen = (Y \gen.\n.(iszero n (Cons Nil Nil) (concatMap \b.(concatMap \q.(safe q (church 1) b 
-  (Cons (Cons q b) Nil) Nil) range) (gen (pred n)))))
+gen = (Y \gen.\n.(iszero n (cons nil nil) (concatMap \b.(concatMap \q.(safe q (church 1) b 
+  (cons (cons q b) nil) nil) range) (gen (pred n)))))
 
 main = [putStrLn showInt length gen (church nq)]

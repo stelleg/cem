@@ -1,3 +1,0 @@
-main = (\mult.
-  (((mult 5) ((mult 3) 4)))
-\x.\y.(x * y))
