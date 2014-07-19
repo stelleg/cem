@@ -1,1 +1,1 @@
-main = (mapm print (splitWhen \c.[c ' ' =] "hello world"))
+main = (mapm print (splitWhen (= 'o') "hello world"))

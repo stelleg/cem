@@ -1,3 +1,3 @@
 gcd = (Y \gcd.\a.\b.(b = 0 a (gcd b (a % b))))
 
-main = (sys_exit (gcd 25 10))
+main = (printf "%d" (gcd 25 10))

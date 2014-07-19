@@ -1,1 +1,1 @@
-main = {double = \x.(x + x)} (double 5)
+main = {double = \x.(x + x)} (printf "%d" (double 5))

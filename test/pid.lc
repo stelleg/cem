@@ -1,0 +1,1 @@
+main = (>>= sys_getpid (printf "%d"))

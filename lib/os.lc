@@ -82,12 +82,8 @@ readFd = \fd.(>>= newPage \iobuf.(Y \readFd.(
       (return nil)
       \h.\t.(>>= readFd (append (cons h t)))))
     (readStrBuf iobuf n)))))
-readFile = \fname.(>>= newPage \iobuf.(
-  >>= (open fname) \fd.(
-  >> (fd > 1024 
-    (sys_exit 2)
-    (readFd fd))
-  (free iobuf))))
+readFile = \fname.(>>= (open fname) \fd.
+  (fd > 1024 (error (sprintf "error opening %s" fname)) (readFd fd)))
 putStr = (writeFd 1)
 putStrLn = \s.(writeFd 1 (append s "\n"))
 print = putStrLn

@@ -1,5 +1,5 @@
-sqrt1 = \n.(Y \loop.\a.\s.\t.([s n <=] 
-  (\t1.(loop [a 1 +] t1 [s t1 +]) [t 2 +])
+sqrt1 = \n.(Y \loop.\a.\s.\t.(s <= n
+  {t' = (t + 2)} (loop (a + 1) t' (s + t'))
   a) 0 1 1)
 
-main = [putStrLn showInt sqrt1 25]
+main = (printf "%d" (sqrt1 25))
