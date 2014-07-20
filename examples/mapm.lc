@@ -1,0 +1,1 @@
+main = (mapm (printf "%d") (range 1 10))

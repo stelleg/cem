@@ -1,3 +1,0 @@
-pair = (pair 5 9)
-
-main = (pair \f.\s.s)

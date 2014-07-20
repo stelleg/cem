@@ -1,0 +1,2 @@
+plus4times3 = (∘ (* 3) (+ 4))
+main = (printf "%d" (plus4times3 5))
