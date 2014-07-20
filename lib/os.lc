@@ -117,9 +117,10 @@ putWords = (Y \putWords.\ws.\loc.(ws
   (pair loc nil)
   \w.\ws.(putStrBuf 1024 loc w
     \loc'.\str.(putWords ws loc' \loc''.\ws.(pair loc'' (cons loc ws))))))
-exec = \fname.\argv.{buf = (newPage nil)}[
-  (putStrBuf pageSize buf fname) \l.\str.
-  (putWords argv l \al.\alocs.
+exec = \fname.\argv.
+  (>>= newPage \buf.
+  (>>= (putStrBuf pageSize buf fname) \p.(p \l.\str.
+  (>>= (putWords argv l) \al.\alocs.
   (putPtrBuf al (cons buf alocs) \l.
   (putWords argv l \el.\elocs.
   (putPtrBuf el (cons buf elocs) \l.

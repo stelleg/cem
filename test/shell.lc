@@ -1,16 +1,22 @@
 # getdents system call
-getdents = \fd.\dirent.\count.[fd dirent count 78 !3]
-ls = \dirname.{dirents = (newPage 1)} (open dirname \fd.([print showInt fd] \n.(getdents fd dirents pageSize 
-  \e.([e 0 /=] (error (printf "ls failed: %d" e)) (readStrBuf [dirents 24 +] pageSize)))))
-
+sys_getdents = \fd.\dirent.\count.\w.[w fd dirent count \c.\d.\f.(\t.\w._!3 78)]
+ls = \dirname.
+  (>>= newPage \dirents.
+  (>>= (open dirname) \fd.
+  (>>= (sys_getdents fd dirents pageSize) \e.
+  (e != 0 (error (sprintf "ls failed: %d" e)) (readStrBuf (dirents + 24) pageSize)))))
+        
 # pipe system call
-sys_pipe = \fdes.[fdes 22 !1]
-pipe = \w.{fdes = (newPage w)} (sys_pipe fdes \n.[(rdl fdes) [rdl fdes 4 +] pair])
+sys_pipe = \fdes.\w.[w fdes \f.(\t.\w._!1 22)]
+pipe = (>>= newPage \fdes.
+       (>> (sys_pipe fdes) 
+       (>>= rdl fdes \n1.(rdl (fdes + 4)) \n2.(pair n1 n2))))
 
 # Shell takes a line and executes it after splitting it into words
-shell = \line.(words line nil \cmd.\args.(fork nil (0 =)
-  [(exec cmd args getEnv) then (error "command not found")]
-  (wait 0)))
+shell = \line.(words line nil \cmd.\args.
+  (>>= sys_fork \n.
+  (n = 0 
+    (>> (exec cmd args getEnv)))))
 
 # Looks for the command in the PATH environment
 envMap = (map (split \c.[c '=' =]) getEnv)
