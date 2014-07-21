@@ -1,1 +1,17 @@
-main = (>>= (readFile "cat.lc") putStr)
+readFd = \fd.(>>= newPage \iobuf.(Y \readFd.
+  (>>= (sys_read fd iobuf pageSize) \n.
+  (>> (printf "Number of bytes read: %d" n) 
+  (>>= (readStrBuf iobuf n) \s.(
+  (>> (printf "String length: %d" (length s)) (nil? s
+    (return nil)
+    (>>= readFd (∘ return (append s)))))))))))
+
+readFile = \fname.(>>= (open fname) \fd.
+  (fd < 0
+    (error (sprintf "error opening %s" fname)) 
+    (readFd fd)))
+
+main = (>> (putStr "Enter filename: ") 
+       (>>= getLine \fname.
+       (>> (printf "Opening %s" fname)
+       (>>= (readFile fname) putStr))))

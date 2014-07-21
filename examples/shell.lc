@@ -13,34 +13,25 @@ pipe = (>>= newPage \fdes.
        (>>= rdl fdes \n1.(rdl (fdes + 4)) \n2.(pair n1 n2))))
 
 # Shell takes a line and executes it after splitting it into words
-shell = \line.(words line nil \cmd.\args.
-  (>>= sys_fork \n.
-  (n = 0 
-    (>> (exec cmd args getEnv)))))
+shell = \line.(words line (return 0) \cmd.\args.
+  (>>= sys_fork \n.(n = 0 
+    (>> (>>= getEnv (exec cmd args)) (sys_exit 0))
+    (sys_wait n))))
 
 # Looks for the command in the PATH environment
-envMap = (map (split \c.[c '=' =]) getEnv)
-paths = (lookup "PATH" strcmp envMap "path not found!" (splitWhen \c.[c ':' =]))
+envMap = (map (split (= '=')) getEnv)
+paths = (lookup "PATH" strcmp envMap "path not found!" (splitWhen (= ':')))
 
 # Extracts all possible commands using ls output
-commands = (mapm \c.[shell (append "/usr/bin/ls ") c] paths)
+commands = (mapm (∘ shell (append "/usr/bin/ls ")) paths)
 
 # Quits on ctrl-d (eof), otherwise returns the line
-getLineOrQuit = \world.(takeWhile \c.[c '\n' /=] (readFd 0 world
-  (error "goodbye")
-  cons))
+getLineOrQuit = (>>= getContents \s.(
+                (takeWhile (!= '\n') s)
+                  (error "goodbye")
+                  \h.\t.(return (: h t))))
 
 # Loops forever on getLines and shells
-main = (forever \world.[
-  (putStr "> ") then 
-  shell getLineOrQuit world
-] initWorld)
-
-main = {fdes = (newPage nil)}[
-  (sys_pipe fdes) \k.\n.
-  [(printf "n = %d" n) k] then \k.
-  [(printf "in = %d" (rdl fdes)) k] then \k.
-  [(printf "out = %d" [rdl fdes 4 +]) k] then 
-  (mapm print commands) 
-#  (print (ls "/usr/bin"))
-]
+main = (forever 
+  (>> (putStr "> ")
+  (>>= getLineOrQuit shell)))

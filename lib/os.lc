@@ -36,20 +36,20 @@ sleep = \sec.\nsec.(>>= (malloc 2) \p.
   (free p)))))
 newPage = (malloc pageSize)
 read-utf8-char-from-buf = \p.(>>= (rdb p) \c1.
-  (c1 / 128 = 0 (return (pair c1 1)) (>>= (rdb (p + 1)) \c2.{c2' = (2 ^ 8 * c2 + c1)}
+  (c1 / 128 = 0 (return (pair c1  1)) (>>= (rdb (p + 1)) \c2.{c2' = (2 ^ 8 * c2 + c1)}
   (c2 / 128 = 0 (return (pair c2' 2)) (>>= (rdb (p + 2)) \c3.{c3' = (2 ^ 16 * c3 + c2')}  
   (c3 / 128 = 0 (return (pair c3' 3)) (>>= (rdb (p + 3)) \c4.
   (return (pair (2 ^ 24 * c4 + c3') 4)))))))))
 write-utf8-char-to-buf = \c.\p.[
   (c >= (2 ^ 24) (>> (mvl c p) (return 4)))
-  (c >= (2 ^ 16) (>> (mvs c p) (>> (mvb (c / (2 ^ 16)) (p + 2)) (return 3))))
+  (c >= (2 ^ 16) (>> (mvb (c % (2 ^ 8)) (p + 2)) (>> (mvs (c / (2 ^ 8)) p) (return 3))))
   (c >= (2 ^ 8)  (>> (mvs c p) (return 2)))
   (>> (mvb c p) (return 1))]
 readStrBuf = (Y \rstr.\loc.\n.(n = 0
   (return nil)
   (>>= (read-utf8-char-from-buf loc) \p.(p \c.\n'.(c = 0 
     (return ;)
-    (>>= (rstr (loc + n') (n - 1)) \s.(return (: c s))))))))
+    (>>= (rstr (loc + n') (n - n')) \s.(return (: c s))))))))
 putStrBuf = \size.\buf.(Y \putStrBuf.\loc.\s.{finished = (>> (mvb 0 loc) (return (pair (loc + 1) nil)))}(s
   finished
   \h.\t.(loc - buf >= size
@@ -75,21 +75,24 @@ writeFile = \fname.\str.(newPage 0 >>= \iobuf.(
   >>= (open fname) \fd.(
   >> (fd > 1024 (sys_exit 2) (writeFd fd str))
   (free iobuf))))
-readFd = \fd.(>>= newPage \iobuf.(Y \readFd.(
-  >>= (sys_read fd iobuf pageSize) \n.(
-  n >= pageSize 
-    (>>= (readStrBuf iobuf n) \s.(s
+readFd = \fd.(>>= newPage \iobuf.(Y \readFd.
+  (>>= (sys_read fd iobuf pageSize) \n.
+  (>>= (readStrBuf iobuf n) \s.
+  (n < pageSize
+    (return s)
+    (nil? s
       (return nil)
-      \h.\t.(>>= readFd (append (cons h t)))))
-    (readStrBuf iobuf n)))))
+      (>>= readFd (∘ return (append s)))))))))
 readFile = \fname.(>>= (open fname) \fd.
-  (fd > 1024 (error (sprintf "error opening %s" fname)) (readFd fd)))
+  (fd > 1024 
+    (error (sprintf "error opening %s" fname)) 
+    (readFd fd)))
 putStr = (writeFd 1)
 putStrLn = \s.(writeFd 1 (append s "\n"))
 print = putStrLn
 getContents = (readFd 0)
-getLine = (>>= getContents \s.(return (takeWhile \c.[c '\n' !=] s)))
-interact = \f.(>>= getContents \s.[putStr f s])
+getLine = (>>= getContents \s.(return (takeWhile (!= '\n') s)))
+interact = \f.(>>= getContents (∘ putStr f))
 getArgs = [tail (map (flip readStrBuf 1024)) (readPtrBuf argv argc)]
 getEnv = [tail (map (flip readStrBuf 1024)) (readPtrBuf envp 1024)]
 
@@ -120,10 +123,8 @@ putWords = (Y \putWords.\ws.\loc.(ws
 exec = \fname.\argv.
   (>>= newPage \buf.
   (>>= (putStrBuf pageSize buf fname) \p.(p \l.\str.
-  (>>= (putWords argv l) \al.\alocs.
-  (putPtrBuf al (cons buf alocs) \l.
-  (putWords argv l \el.\elocs.
-  (putPtrBuf el (cons buf elocs) \l.
-  (sys_execve buf al el)))))
-]
-
+  (>>= (putWords argv l) \p.(p \al.\alocs.
+  (>>= (putPtrBuf al (cons buf alocs)) \l.
+  (>>= (putWords argv l) \p.(p \el.\elocs.
+  (>>= (putPtrBuf el (cons buf elocs)) \l.
+  (sys_execve buf al el))))))))))
