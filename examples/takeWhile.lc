@@ -1,1 +1,2 @@
-main = (putStrLn (takeWhile \c.(and [c 'a' >] [c 'z' <]) getContents))
+main = (>>= getContents 
+       (∘ putStr (takeWhile \c.(and (c > 'a') (c < 'z')))))

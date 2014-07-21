@@ -1,10 +1,5 @@
-nil = \n.\c.n
-cons = \h.\t.\n.\c.(c h t)
-print = putStrLn
-
-printi = (Y \printi.\acc.\l.(l (print acc) \h.\t.([h '#' =] 
+printi = (Y \printi.\acc.\l.(l (print acc) \h.\t.(h = '#'
   \i.(printi (append acc (showInt i)) t)
   (printi (append acc (cons h nil)) t))) nil)
 
 main = (printi "a: #, b: #" 3 4)
-
