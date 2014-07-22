@@ -1,10 +1,33 @@
-readFd = \fd.(>>= newPage \iobuf.(Y \readFd.
-  (>>= (sys_read fd iobuf pageSize) \n.
-  (>> (printf "Number of bytes read: %d" n) 
-  (>>= (readStrBuf iobuf n) \s.(
-  (>> (printf "String length: %d" (length s)) (nil? s
-    (return nil)
-    (>>= readFd (∘ return (append s)))))))))))
+eprintf = (∘ (sprintf_ (writeFd 2)) (flip append "\n"))
+
+writeFd' = \fd.\str.
+  (>>= newPage \iobuf.{
+  writeFd = (Y \writeFd.\str.
+    (>>= (putStrBuf pageSize iobuf str) \p.(p \p.\s.
+    (>> (eprintf "Wrote %d bytes to buffer, have %d chars left" (p - iobuf) (length s))
+    (>>= (sys_write fd iobuf (p - iobuf)) \n.
+    (>> (eprintf "Wrote %d bytes to fd" n)
+    (nil? s (return n) (writeFd s))))))))
+  }
+  (>>= (writeFd str) \n.
+  (>> (free iobuf)
+  (return n))))
+
+readFd = \fd.
+  (>>= newPage \iobuf.{
+  readFd = (Y \readFd.
+    (>>= (sys_read fd iobuf pageSize) \n.
+    (>> (eprintf "Number of bytes read: %d" n) 
+    (>>= (readStrBuf iobuf n) \s.(
+    (>> (eprintf "String length: %d" (length s)) (nil? s
+      (return nil)
+      (>>= readFd \s'.{newstr = (append s s')}
+    (>> (eprintf "combined length: %d" (length newstr)) 
+    (return newstr))))))))))
+  }
+  (>>= readFd \s.
+  (>> (free iobuf)
+  (return s))))
 
 readFile = \fname.(>>= (open fname) \fd.
   (fd < 0
@@ -15,3 +38,5 @@ main = (>> (putStr "Enter filename: ")
        (>>= getLine \fname.
        (>> (printf "Opening %s" fname)
        (>>= (readFile fname) putStr))))
+
+main = (>>= (readFd 0) (writeFd' 1))

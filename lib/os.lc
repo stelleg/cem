@@ -41,20 +41,29 @@ read-utf8-char-from-buf = \p.(>>= (rdb p) \c1.
   (c3 / 128 = 0 (return (pair c3' 3)) (>>= (rdb (p + 3)) \c4.
   (return (pair (2 ^ 24 * c4 + c3') 4)))))))))
 write-utf8-char-to-buf = \c.\p.[
-  (c >= (2 ^ 24) (>> (mvl c p) (return 4)))
-  (c >= (2 ^ 16) (>> (mvb (c % (2 ^ 8)) (p + 2)) (>> (mvs (c / (2 ^ 8)) p) (return 3))))
-  (c >= (2 ^ 8)  (>> (mvs c p) (return 2)))
-  (>> (mvb c p) (return 1))]
+  (c <= 0x7f (>> (mvb c p) (return 1)))
+  (c <= 0x7ff (>> (mvb (c / 0x40 + 0xc0) p) 
+              (>> (mvb (c % 0x40 + 0x80) (p + 1)) (return 2))))
+  (c <= 0xffff (>> (mvb (c / 0x1000 + 0xe0) p)
+               (>> (mvb (c % 0x1000 / 0x40 + 0x80) (p + 1))
+               (>> (mvb (c % 0x40 + 0x80) (p + 2))
+               (return 3)))))
+  (>> (mvb '?' p) (return 1))]
 readStrBuf = (Y \rstr.\loc.\n.(n = 0
   (return nil)
   (>>= (read-utf8-char-from-buf loc) \p.(p \c.\n'.(c = 0 
     (return ;)
     (>>= (rstr (loc + n') (n - n')) \s.(return (: c s))))))))
-putStrBuf = \size.\buf.(Y \putStrBuf.\loc.\s.{finished = (>> (mvb 0 loc) (return (pair (loc + 1) nil)))}(s
-  finished
-  \h.\t.(loc - buf >= size
+putStrBuf = \size.\buf.{
+  putStrBuf = (Y \putStrBuf.\loc.\s.
+  {finished = (return (pair loc s))}
+  (s 
     finished 
-    (>>= (write-utf8-char-to-buf h loc) \n.(putStrBuf (loc + n) t)))) buf)
+    \h.\t.(loc - buf >= (size - 4) # This is to ensure the 4 byte unicode char can't be written
+      finished 
+      (>>= (write-utf8-char-to-buf h loc) \n.(putStrBuf (loc + n) t)))))
+  }
+  (putStrBuf buf)
 open = \fname.(>>= newPage \nameBuf.(
   >> (putStrBuf pageSize nameBuf fname)
   (sys_open nameBuf 66 0)))
@@ -66,10 +75,10 @@ readPtrBuf = (Y \rstr.\loc.\n.(n <= 0
   (>>= (rd loc) \p.(p = 0
     (return nil)
     (>>= (rstr (loc + 8) (n - 1)) \s.(return (: p s)))))))
-writeFd = \fd.\str.(>>= newPage \iobuf.(>> (Y \writeFd.\str.(
-  >>= (putStrBuf pageSize iobuf str) \p.(p \p.\s.(
-  >>= (sys_write fd iobuf (p - iobuf)) \n.(
-  s (return n) \h.\t.(writeFd s))))
+writeFd = \fd.\str.(>>= newPage \iobuf.(>> (Y \writeFd.\str.
+  (>>= (putStrBuf pageSize iobuf str) \p.(p \p.\s.
+  (>>= (sys_write fd iobuf (p - iobuf)) \n.
+  (nil? s (return n) (writeFd s))))
 ) str) (free iobuf)))
 writeFile = \fname.\str.(newPage 0 >>= \iobuf.(
   >>= (open fname) \fd.(

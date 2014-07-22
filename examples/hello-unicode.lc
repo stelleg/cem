@@ -1,1 +1,5 @@
-main = (print (reverse "¡Hola!"))
+main = [
+  [>> print reverse "!aloH¡"]
+  [>> print "Did you know you can use ∘ for compose?"]
+  (printf "%c has decimal value %d" 'λ' 'λ')
+]

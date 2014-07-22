@@ -1,7 +1,6 @@
-divs = \n.\x.[[x n %] 0 /=]
+divs = \n.\x.(x % n != 0)
 thefilter = \l.(filter [divs head l] (tail l))
 primes = [(map head) (iterate thefilter) from 2]
-mapm = \f.(foldr \a.\b.(f a \c.b) nil)
-bits = \i.[(sum (zipWith \x.\y.[[y x /] 2 %] (iterate \x.[2 x *] 1) (replicate 32 i))) 2 %]
+bits = \i.(sum (zipWith \x.\y.(y / x % 2)  (iterate (* 2)  1) (replicate 32 i)) % 2)
 
-main = (mapm \i.[putStrLn showInt bits i] ([take readInt head getArgs] primes))
+main = (mapm \i.[putStr showInt bits i] (take 100000 primes))

@@ -2,7 +2,7 @@
 module IO where
 
 import Text.ParserCombinators.Parsec
-import Text.ParserCombinators.Parsec.Token
+import Text.ParserCombinators.Parsec.Token (decimal)
 import Text.ParserCombinators.Parsec.Prim (getPosition)
 import Data.Either
 import Data.Maybe
@@ -38,7 +38,7 @@ instance Show WordSize where
     Word8 -> "b"
     Word16 -> "s"
     Word32 -> "l"
-    Word64 -> "q"
+    Word64 -> "q" 
 
 instance Show (SExpr) where
   show (Var s)     = s
@@ -62,7 +62,14 @@ word = (:) <$> satisfy (\c -> not (isSpace c || isDigit c || elem c "\'\"\\.#()[
        <*> many (satisfy $ \c-> not (isSpace c || elem c "\\.()[]{}#"))
 
 literal :: Parser Int
-literal = (read <$> many1 digit) :: Parser Int
+literal = try hex <|> decim
+
+hex :: Parser Int
+hex = read <$> ((++) <$> ((:) <$> char '0' <*> (string "x" <|> string "X")) <*> many1 (satisfy hexchar))
+  where hexchar c = isDigit c || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')
+
+decim :: Parser Int
+decim = read <$> many1 digit
 
 comment = char '#' >> skipMany (noneOf "\n") >> char '\n'
 notCode = ((comment <|> space) >> notCode) <|> return ()
