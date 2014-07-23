@@ -1,4 +1,5 @@
 {-#LANGUAGE OverloadedStrings#-}
+{-#LANGUAGE TupleSections#-}
 module VM where
 
 import qualified Data.Set as S
@@ -42,14 +43,17 @@ expr e = case e of
   Lit l i -> IM.singleton l $ Lit l i
   Op l o -> IM.singleton l $ Op l o
 
+showIndex :: Int -> String
+showIndex i = map (toEnum . (+ 8272) . fromEnum) $ show i 
+
 instance Show LExpr where
   show e = case e of
-    Var l s -> s
-    Lam l s e -> 'λ':s ++ '.':show e
-    App l m n -> "(" ++ show m ++ " " ++ show n ++ ")"
-    Lit l i -> case i of Nothing -> "#"; Just i -> show i
-    Op l o -> show o
-    World w -> "Ω"
+    Var l s -> s ++ showIndex l
+    Lam l s e -> 'λ':showIndex l ++ s ++ '.':show e
+    App l m n -> '(':showIndex l ++ show m ++ " " ++ show n ++ ")"
+    Lit l i -> (case i of Nothing -> "#"; Just i -> show i) ++ showIndex l
+    Op l o -> show o ++ showIndex l
+    World l -> "Ω" ++ showIndex l 
 
 showlabeled e = case e of
     Var l s -> s ++ "_" ++ show l

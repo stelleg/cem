@@ -38,5 +38,3 @@ main = (>> (putStr "Enter filename: ")
        (>>= getLine \fname.
        (>> (printf "Opening %s" fname)
        (>>= (readFile fname) putStr))))
-
-main = (>>= (readFd 0) (writeFd' 1))
