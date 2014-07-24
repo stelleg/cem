@@ -59,10 +59,6 @@ ca e = ca'' M.empty where
   islam l = case fjlu l exps of Lam _ _ _ -> True; _ -> False
   isval l = isValue $ fjlu l exps
 
--- Lookup with empty default
-lu :: M.Key -> M.IntMap S.IntSet -> S.IntSet
-lu k m = maybe S.empty id $ M.lookup k m  
-
 -- Free variable analysis
 fv :: LExpr -> FreeVariableAnalysis
 fv (Var l v) = M.singleton l (Set.singleton v)
@@ -73,8 +69,13 @@ fv a = M.empty
 -- Utility functions
 union :: M.IntMap S.IntSet -> M.IntMap S.IntSet -> M.IntMap S.IntSet
 union = M.unionWith S.union
+
+lu :: M.Key -> M.IntMap S.IntSet -> S.IntSet
+lu k m = maybe S.empty id $ M.lookup k m  
+
 fjlu :: Int -> M.IntMap a -> a
 fjlu v = maybe (error $ "couldn't find: " ++ show v) id . M.lookup v
+
 ppca :: ValueAnalysis -> String
 ppca m = concat.intersperse "\n".map pp.M.toList.M.map S.toList $ m
   where pp (v, ls) = show v ++ ":" ++ (concat . intersperse ", " . map show) ls

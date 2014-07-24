@@ -8,13 +8,15 @@ Y = \g.(\x.[g x x] \x.[g x x])
 * = \n.\m.[m n \n.\m._*]
 / = \n.\m.[m n \n.\m._/]
 % = \n.\m.[m n \n.\m._%]
-= = \n.\m.[m n \n.\m._=]
-!= = \n.\m.[m n \n.\m._\=]
->= = \n.\m.[m n \n.\m._>=]
-<= = \n.\m.[m n \n.\m._<=]
-< = \n.\m.[m n \n.\m._<]
-> = \n.\m.[m n \n.\m._>]
 ^ = \n.(Y \^.\n'.\m.(m = 0 n' (^ (n * n') (m - 1))) 1)
+
+# Boolean integer comparisons
+= = \n.\m.[m n \n.\m.\t.\f._=]
+!= = \n.\m.[m n \n.\m.\t.\f._\=]
+>= = \n.\m.[m n \n.\m.\t.\f._>=]
+<= = \n.\m.[m n \n.\m.\t.\f._<=]
+< = \n.\m.[m n \n.\m.\t.\f._<]
+> = \n.\m.[m n \n.\m.\t.\f._>]
 
 # Booleans
 false = \t.\f.f
