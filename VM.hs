@@ -124,19 +124,18 @@ cem ((Op i o, e), h, cs) = (\(t, e', cs') -> ((t, e'), h, cs')) <$>
       LC.Word64 -> (,e,cs) <$> (peekV (intPtrToPtr $ toEnum t) >>= return . pair' i (World i) . Lit i . Just . (fromEnum :: Word64 -> Int))
       where (World _,_):(Lit _ (Just t), _):e' = env e h
     a -> return $ case a of 
-      LC.Add -> (,e,cs) <$> Lit i $ (+) <$> arg1 <*> arg2
-      LC.Sub -> (,e,cs) <$> Lit i $ (-) <$> arg1 <*> arg2
-      LC.Mul -> (,e,cs) <$> Lit i $ (*) <$> arg1 <*> arg2
-      LC.Div -> (,e,cs) <$> Lit i $ div <$> arg1 <*> arg2
-      LC.Mod -> (,e,cs) <$> Lit i $ mod <$> arg1 <*> arg2
-      LC.Le -> toChurch ((<=) t' t) ct cf cs
-      LC.Ge -> toChurch ((>=) t' t) ct cf cs
-      LC.Lt -> toChurch ((<) t' t) ct cf cs
-      LC.Gt -> toChurch ((>) t' t) ct cf cs
-      LC.Eq -> toChurch ((==) t' t) ct cf cs
-      LC.Neq -> toChurch ((/=) t' t) ct cf cs
-      where (Lit _ arg2, _):(Lit _ arg1, _):e' = env e h
-      where (Lit _ (Just t), _):(Lit _ (Just t'), _):ct:cf:e' = env e h
+      LC.Add -> (,e,cs) <$> Lit i $ (+) <$> arg1 <*> arg2 where (Lit _ arg2, _):(Lit _ arg1, _):e' = env e h
+      LC.Sub -> (,e,cs) <$> Lit i $ (-) <$> arg1 <*> arg2 where (Lit _ arg2, _):(Lit _ arg1, _):e' = env e h
+      LC.Mul -> (,e,cs) <$> Lit i $ (*) <$> arg1 <*> arg2 where (Lit _ arg2, _):(Lit _ arg1, _):e' = env e h
+      LC.Div -> (,e,cs) <$> Lit i $ div <$> arg1 <*> arg2 where (Lit _ arg2, _):(Lit _ arg1, _):e' = env e h
+      LC.Mod -> (,e,cs) <$> Lit i $ mod <$> arg1 <*> arg2 where (Lit _ arg2, _):(Lit _ arg1, _):e' = env e h
+      LC.Le -> toChurch ((<=) t' t) ct cf cs where (Lit _ (Just t), _):(Lit _ (Just t'), _):cf:ct:e' = env e h
+      LC.Ge -> toChurch ((>=) t' t) ct cf cs where (Lit _ (Just t), _):(Lit _ (Just t'), _):cf:ct:e' = env e h
+      LC.Lt -> toChurch ((<) t' t) ct cf cs where (Lit _ (Just t), _):(Lit _ (Just t'), _):cf:ct:e' = env e h
+      LC.Gt -> toChurch ((>) t' t) ct cf cs where (Lit _ (Just t), _):(Lit _ (Just t'), _):cf:ct:e' = env e h
+      LC.Eq -> toChurch ((==) t' t) ct cf cs where (Lit _ (Just t), _):(Lit _ (Just t'), _):cf:ct:e' = env e h
+      LC.Neq -> toChurch ((/=) t' t) ct cf cs  where (Lit _ (Just t), _):(Lit _ (Just t'), _):cf:ct:e' = env e h
+     
 
 pair' l f s = App l (App l (labeled pair) s) f
 toChurch b (ct,et) (cf,ef) cs = if b then (ct,et,cs) else (cf,ef,cs)
