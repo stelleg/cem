@@ -113,6 +113,7 @@ index = \n.\k.(Y \index.\n.\k.\cont.(n = 0
   cont
   \x.(index (n - 1) k (k = n x cont))) n (n - k + 1) (error "index failed"))
 listIndex = (Y \listIndex.\n.\l.(l (error "listIndex failed") \h.\t.(n = 0 h (listIndex (n - 1) t))))
+!! = listIndex
 fst = (index 2 1)
 snd = (index 2 2)
 sprintf_ = \k.(Y \printf.\acc.\l.(l (k acc) \h.\t.(h = '%'
