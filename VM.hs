@@ -33,35 +33,59 @@ data LExpr = Var Label String
            | Op  Label LC.Op
            | World Label
 
+instance Eq LExpr where
+  e1 == e2 = getLabel e1 == getLabel e2
+
+instance Ord LExpr where
+  compare e1 e2 = compare (getLabel e1) (getLabel e2)
+
 type Label = Int
 
 expr :: LExpr -> IM.IntMap LExpr
 expr e = case e of
-  Var l v -> IM.singleton l $ Var l v
-  App l m n -> IM.insert l (App l m n) (expr m `IM.union` expr n)
-  Lam l v e -> IM.insert l (Lam l v e) (expr e)
-  Lit l i -> IM.singleton l $ Lit l i
-  Op l o -> IM.singleton l $ Op l o
+  Var l v -> IM.singleton l e
+  App l m n -> IM.insert l e (expr m `IM.union` expr n)
+  Lam l v e' -> IM.insert l e (expr e')
+  Lit l i -> IM.singleton l e
+  Op l o -> case o of
+    LC.Syscall n -> IM.insert l e $ expr $ returnval l
+    LC.Write w -> IM.insert l e $ expr $ World $ l + 1 
+    LC.Read w -> IM.insert l e $ expr $ returnval l
+    LC.Add -> IM.insert l e $ expr $ Lit (l + 1) Nothing
+    LC.Sub -> IM.insert l e $ expr $ Lit (l + 1) Nothing
+    LC.Mul -> IM.insert l e $ expr $ Lit (l + 1) Nothing
+    LC.Div -> IM.insert l e $ expr $ Lit (l + 1) Nothing
+    LC.Mod -> IM.insert l e $ expr $ Lit (l + 1) Nothing
+    LC.Le -> IM.singleton l e 
+    LC.Ge -> IM.singleton l e
+    LC.Lt -> IM.singleton l e
+    LC.Gt -> IM.singleton l e
+    LC.Eq -> IM.singleton l e
+    LC.Neq -> IM.singleton l e
+  World l -> IM.singleton l $ World l
+
+returnval :: Int -> LExpr
+returnval l = Lam (l+1) "f" $ App (l+2) (App (l+3) (Var (l+4) "f") (Lit (l+5) Nothing)) (World $ l+6) 
 
 showIndex :: Int -> String
-showIndex i = map (toEnum . (+ 8272) . fromEnum) $ show i 
+showIndex i = map (toEnum . (+ 0 {-8272-}) . fromEnum) $ show i 
 
 instance Show LExpr where
   show e = case e of
-    Var l s -> s ++ showIndex l
-    Lam l s e -> 'λ':showIndex l ++ s ++ '.':show e
-    App l m n -> '(':showIndex l ++ show m ++ " " ++ show n ++ ")"
-    Lit l i -> (case i of Nothing -> "#"; Just i -> show i) ++ showIndex l
-    Op l o -> show o ++ showIndex l
-    World l -> "Ω" ++ showIndex l 
+    Var l s -> s 
+    Lam l s e -> 'λ':s ++ '.':show e
+    App l m n -> '(':show m ++ " " ++ show n ++ ")"
+    Lit l i -> case i of Nothing -> "#"; Just i -> show i
+    Op l o -> show o 
+    World l -> "Ω"
 
 showlabeled e = case e of
-    Var l s -> s ++ "_" ++ show l
-    Lam l s e -> "λ_" ++ show l ++ s ++ '.':showlabeled e
-    App l m n -> "(_" ++ show l ++ showlabeled m ++ " " ++ showlabeled n ++ ")"
-    Lit l i -> (case i of Nothing -> "#"; Just i -> show i) ++ "_" ++ show l
-    Op l o -> show o ++ "_" ++ show l
-    World w -> "Ω_" ++ show w
+  Var l s -> s ++ showIndex l
+  Lam l s e -> 'λ':showIndex l ++ s ++ '.':showlabeled e
+  App l m n -> '(':showIndex l ++ showlabeled m ++ " " ++ showlabeled n ++ ")"
+  Lit l i -> (case i of Nothing -> "#"; Just i -> show i) ++ showIndex l
+  Op l o -> show o ++ showIndex l
+  World l -> "Ω" ++ showIndex l 
 
 getLabel :: LExpr -> Label
 getLabel e = case e of
@@ -70,17 +94,18 @@ getLabel e = case e of
   App l m n -> l
   Lit l i -> l
   Op l o -> l
+  World l -> l
 
 labeled :: LC.SExpr -> LExpr
 labeled e = evalState (labeled' e) 0
   where labeled' :: LC.SExpr  -> State Int LExpr
-        labeled' (LC.Lam l e) = Lam <$> incr <*> pure l <*> labeled' e
-        labeled' (LC.App m n) = App <$> incr <*> labeled' m <*> labeled' n
-        labeled' (LC.Var v) = Var <$> incr <*> pure v
-        labeled' (LC.Lit l) = Lit <$> incr <*> pure (Just l)
-        labeled' (LC.Op o) = Op <$> incr <*> pure o 
-        labeled' LC.World = World <$> incr
-        incr = do i <- get; put (i+1); return i
+        labeled' (LC.Lam l e) = Lam <$> incr 1 <*> pure l <*> labeled' e
+        labeled' (LC.App m n) = App <$> incr 2 <*> labeled' m <*> labeled' n
+        labeled' (LC.Var v) = Var <$> incr 1 <*> pure v
+        labeled' (LC.Lit l) = Lit <$> incr 1 <*> pure (Just l)
+        labeled' (LC.Op o) = Op <$> incr 7 <*> pure o  -- worst case
+        labeled' LC.World = World <$> incr 1
+        incr n = do i <- get; put (i+n); return i
 
 vlookup v e h = maybe (error $ "unbound var: " ++ v) match (M.lookup e (snd h))
   where match (v', cl, e') = if v == v' then (cl, e) else vlookup v e' h
@@ -92,6 +117,7 @@ update l c h = M.insertWith (\(s,c,e) (s',c',e') -> (s',c,e')) l ("",c,-1) h
 
 isValue (App _ _ _) = False
 isValue (Var _ _) = False
+isValue (Op _ _)  = False
 isValue _ = True
 
 cem :: CEMState -> IO CEMState

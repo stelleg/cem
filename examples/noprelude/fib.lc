@@ -1,4 +1,11 @@
-Y=\g.(\x.[g x x] \x.[g x x])
-fib=(Y \fib.\n.([n 3 <] 1 [(fib [n 1 -]) (fib [n 2 -]) +]))
+# Boolean integer comparisons
+< = \n.\m.\t.\f.[m n \n.\m._<]
 
-(fib 35)
+# Arithmetic
++ = \n.\m.[m n \n.\m._+]
+- = \n.\m.[m n \n.\m._-]
+
+Y = \g.(\x.[g x x] \x.[g x x])
+fib = (Y \fib.\n.(< n 3 1 (fib (n - 1) + (fib (n - 2)))))
+
+main = \w.\p.(fib 35)

@@ -1,15 +1,6 @@
 # Recursion!
 Y = \g.(\x.[g x x] \x.[g x x])
 
-# Arithmetic
-+ = \n.\m.[m n \n.\m._+]
-- = \n.\m.[m n \n.\m._-]
--' = (0 -)
-* = \n.\m.[m n \n.\m._*]
-/ = \n.\m.[m n \n.\m._/]
-% = \n.\m.[m n \n.\m._%]
-^ = \n.(Y \^.\n'.\m.(m = 0 n' (^ (n * n') (m - 1))) 1)
-
 # Boolean integer comparisons
 = = \n.\m.\t.\f.[m n \n.\m._=]
 != = \n.\m.\t.\f.[m n \n.\m._\=]
@@ -17,6 +8,15 @@ Y = \g.(\x.[g x x] \x.[g x x])
 <= = \n.\m.\t.\f.[m n \n.\m._<=]
 < = \n.\m.\t.\f.[m n \n.\m._<]
 > = \n.\m.\t.\f.[m n \n.\m._>]
+
+# Arithmetic
++ = \n.\m.[m n \n.\m._+]
+- = \n.\m.[m n \n.\m._-]
+-' = (0 -)
+* = \n.\m.[m n \n.\m._*]
+/ = \n.\m.[m n \n.\m._/]
+% = \n.\m.[m n \n.\m._%]
+^ = \n.(Y \^.\l.\n*.\m.(m = 0 n* (^ (n * n*) (m - 1))) n 1)
 
 # Booleans
 false = \t.\f.f
@@ -66,6 +66,7 @@ length = \xs.(Y \length.\xs.\acc.(xs acc \h.\t.(length t (acc + 1))) xs 0)
 foldl = (Y \foldl.\f.\a.\bs.(bs a \b.\bs.(foldl f (f a b) bs)))
 foldr = (Y \foldr.\f.\a.\bs.(bs a \b.\bs.(f b (foldr f a bs))))
 append = \as.\bs.(foldr cons bs as)
+++ = append
 reverse = (foldl (flip cons) nil) 
 any = \p.\xs.(foldr or false (map p xs))
 all = \p.\xs.(foldr and true (map p xs))
@@ -84,6 +85,12 @@ tail = (drop 1)
 splitAt = \n.\xs.(pair (take n xs) (drop n xs))
 takeWhile = (Y \takeWhile.\f.\xs.(xs nil \x.\xs.(f x (cons x (takeWhile f xs)) nil)))
 dropWhile = (Y \dropWhile.\f.\xs.(xs nil \x.\xs.(f x (dropWhile f xs) (cons x xs))))
+splitHalf = (Y \sh.\xs.(xs (pair ; ;) \h1.\t1.(t1 (pair (: h1 ;) ;) \h2.\t2.
+  {tails = (sh t2)} (tails \f.\s.(
+  (pair (: h1 f) (: h2 s)))))))
+sort = \f.{merge = (Y \merge.\xs.\ys.(xs ys \x.\xts.(ys xs \y.\yts.(f x y 
+             (: x (merge xts ys)) (: y (merge xs yts))))))}
+  (Y \ms.\l.(length l < 2 l (splitHalf l \f.\s.(merge (ms f) (ms s)))))
 split = \f.(Y \split.\xs.(xs (pair nil nil) \h.\t.(f h 
   (pair nil t)
   (split t \acc.\rem.(pair (cons h acc) rem)))))
@@ -105,6 +112,7 @@ splitWhen = \f.(Y \splitWhen.\xs.(split f xs \l.\r.(r
   (l ; \h.\t.(: l ;))
   \h.\t.{cont = (splitWhen r)}(l cont \h.\t.(: l cont)))))
 words = (splitWhen isSpace)
+lines = (splitWhen (= '\n'))
 intersperse = \v.(Y \intersperse.\l.(l l \h.\t.(t l 
   \h'.\t'.[(: h) (: v) intersperse t])))
 unwords = (compose concat (intersperse " "))

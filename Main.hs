@@ -31,10 +31,15 @@ parseOpts "t" sources = partial (\((c,e),h,s)->print c) =<< readSources sources
 parseOpts _ _ = usage
 
 chooseOutput "-" = "a.out"
+chooseOutput "=" = "a.out"
 chooseOutput fname = takeWhile (/= '.') fname
 
 readSources [] = getContents
-readSources s = concat <$> mapM (\f->if f == "-" then getContents else readFile f) s
+readSources s = concat <$> mapM chooseInput s
+  where chooseInput f = case f of
+                         "-" -> getContents
+                         '=':p -> return p
+                         _ -> readFile f
 
 version = putStrLn $ "0.1 Alpha"  
 usage = putStrLn $ "Usage: cem {-lhvdgpcf} {file(s)}"
@@ -42,7 +47,7 @@ usage = putStrLn $ "Usage: cem {-lhvdgpcf} {file(s)}"
 cfa s = do
   let prog = VM.labeled $ IO.parseProgram s
   putStrLn $ VM.showlabeled prog
-  putStrLn $ A.ppca $ A.ca prog
+  putStrLn $ A.ppca prog $ A.ca prog
 
 graph :: String -> IO ()
 graph s = do 
@@ -64,7 +69,7 @@ freevars s = print $ A.fv $ VM.labeled $ IO.parseProgram s
 compile :: String -> String -> IO ()
 compile filename s = do
   writeFile "/tmp/prog.lc" s
-  native filename (toDeBruijn e) e where e = Lam "argc" $ Lam "argv" $ Lam "envp" $ IO.parseProgram s
+  native filename (toDeBruijn e) e where e = IO.parseProgram s
 
 toDeBruijn :: SExpr -> DBExpr
 toDeBruijn expr = either (\v->error$"free var: "++v) id $ deBruijn [] expr 

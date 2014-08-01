@@ -94,7 +94,7 @@ readFd = \fd.(>>= newPage \iobuf.(Y \readFd.
       (>>= readFd (∘ return (append s)))))))))
 readFile = \fname.(>>= (open fname) \fd.
   (fd > 1024 
-    (error (sprintf "error opening %s" fname)) 
+    (sys_exit (-' 1))
     (readFd fd)))
 putStr = (writeFd 1)
 putStrLn = \s.(writeFd 1 (append s "\n"))
@@ -102,8 +102,8 @@ print = putStrLn
 getContents = (readFd 0)
 getLine = (>>= getContents \s.(return (takeWhile (!= '\n') s)))
 interact = \f.(>>= getContents (∘ putStr f))
-getArgs = [tail (map (flip readStrBuf 1024)) (readPtrBuf argv argc)]
-getEnv = [tail (map (flip readStrBuf 1024)) (readPtrBuf envp 1024)]
+#getArgs = [tail (map (flip readStrBuf 1024)) (readPtrBuf argv argc)]
+#getEnv = [tail (map (flip readStrBuf 1024)) (readPtrBuf envp 1024)]
 
 # Prelude-like utilities that require IO, e.g. partial functions
 error = \s.(>> (putStrLn s) (sys_exit 1))
