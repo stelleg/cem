@@ -1,3 +1,5 @@
+{-# LANGUAGE DataKinds #-}
+
 import System.Environment as SE
 import System.Process (system)
 import Paths_cem (getDataFileName)
@@ -10,6 +12,7 @@ import Data.IORef
 import Control.Applicative
 import System.Exit
 import qualified Data.Map as M
+import qualified AI
 
 libs = mapM getDataFileName ["lib/prelude.lc", "lib/os.lc", "lib/church.lc"]
 
@@ -22,7 +25,13 @@ parseOpts :: String -> [String] -> IO ()
 parseOpts ('l':o) sources = do srclibs <- libs; parseOpts o (srclibs ++ sources)
 parseOpts "v" _ = version
 parseOpts "h" _ = usage
-parseOpts "a" sources = cfa =<< readSources sources
+parseOpts "a" (level:sources) = readSources sources >>= case read level :: Int of
+  1 -> \s -> (cfa s :: IO (AI.CFA 1)) >> return ()
+  2 -> \s -> (cfa s :: IO (AI.CFA 2)) >> return ()
+  3 -> \s -> (cfa s :: IO (AI.CFA 3)) >> return ()
+  4 -> \s -> (cfa s :: IO (AI.CFA 4)) >> return ()
+  5 -> \s -> (cfa s :: IO (AI.CFA 5)) >> return ()
+  6 -> \s -> (cfa s :: IO (AI.CFA 6)) >> return ()
 parseOpts "c" sources = compile (chooseOutput . last $ sources) =<< readSources sources
 parseOpts "f" sources = freevars =<< readSources sources
 parseOpts "g" sources = graph =<< readSources sources
@@ -31,7 +40,7 @@ parseOpts "t" sources = partial (\((c,e),h,s)->print c) =<< readSources sources
 parseOpts _ _ = usage
 
 chooseOutput "-" = "a.out"
-chooseOutput "=" = "a.out"
+chooseOutput ('=':prog) = "a.out"
 chooseOutput fname = takeWhile (/= '.') fname
 
 readSources [] = getContents
@@ -47,7 +56,10 @@ usage = putStrLn $ "Usage: cem {-lhvdgpcf} {file(s)}"
 cfa s = do
   let prog = VM.labeled $ IO.parseProgram s
   putStrLn $ VM.showlabeled prog
-  putStrLn $ A.ppca prog $ A.ca prog
+  let (prog_vals, cfa) = AI.cfa prog
+  putStrLn $ "Program values: " ++ AI.ppset prog_vals
+  putStrLn $ AI.ppca $ cfa
+  return (prog_vals, cfa)
 
 graph :: String -> IO ()
 graph s = do 

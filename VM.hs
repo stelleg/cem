@@ -32,12 +32,7 @@ data LExpr = Var Label String
            | Lit Label (Maybe LC.Literal)
            | Op  Label LC.Op
            | World Label
-
-instance Eq LExpr where
-  e1 == e2 = getLabel e1 == getLabel e2
-
-instance Ord LExpr where
-  compare e1 e2 = compare (getLabel e1) (getLabel e2)
+  deriving (Eq, Ord)
 
 type Label = Int
 
@@ -68,7 +63,7 @@ returnval :: Int -> LExpr
 returnval l = Lam (l+1) "f" $ App (l+2) (App (l+3) (Var (l+4) "f") (Lit (l+5) Nothing)) (World $ l+6) 
 
 showIndex :: Int -> String
-showIndex i = map (toEnum . (+ 0 {-8272-}) . fromEnum) $ show i 
+showIndex i = map (toEnum . (+ 8272) . fromEnum) $ show i 
 
 instance Show LExpr where
   show e = case e of

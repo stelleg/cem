@@ -3,4 +3,4 @@ cons = \h.\t.\f.(f h t)
 Y = \g.(\x.[g x x] \z.[g z z])
 nats = (Y \nats.\n.(cons n [nats succ n]))
 
-(nats \f.\x.x)
+main = \w.\p.(nats \f.\x.x \h.\t.t)

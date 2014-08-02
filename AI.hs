@@ -28,7 +28,7 @@ type Closure e = (VM.LExpr, Env e)
 type ClosureAnalysis a = M.Map (Closure a) (S.Set (Closure a)) 
 data N = Z | S N
 
-type CFA n = ClosureAnalysis (Depth n)
+type CFA n = (S.Set (Closure (Depth n)), ClosureAnalysis (Depth n))
 
 type family Depth n where
   Depth 0 = Z
@@ -37,7 +37,13 @@ type family Depth n where
 data Env n where 
   NoEnv :: Env Z
   Env :: [Binding n] -> Env (S n)
+{-
+instance Ord (Closure (S n)) where
+  compare (t, vs) (t', vs') = compare (t, (scope (fvs t) vs)) (t', (scope (fvs t') vs'))
 
+instance Eq (Closure (S n)) where
+  (==) (t, vs) (t', vs') = (==) (t, (scope (fvs t) vs)) (t', (scope (fvs t') vs'))
+-}
 instance Ord (Env n) where
   compare NoEnv NoEnv = EQ
   compare (Env bs) (Env cs) = compare bs cs
@@ -77,29 +83,37 @@ getEnv_ vs [] = []
 getEnv_ (v:vs) ((v', b):bs) | v == v' = (v,b):getEnv_ vs bs
                             | otherwise = getEnv_ (v:vs) bs
 
-eval :: EnvC n => VM.LExpr -> ClosureAnalysis (S n)
-eval t = snd $ runState (eval' (S.singleton (t, empty))) M.empty
+cfa :: EnvC n => VM.LExpr -> (S.Set (Closure (S n)), ClosureAnalysis (S n))
+cfa t = runState (eval' (S.singleton (t, empty))) M.empty
 
 -- Takes a set of closures, and returns the set of values possible from that
 -- closure.
 eval' :: EnvC n => S.Set (Closure (S n)) -> State (ClosureAnalysis (S n)) (S.Set (Closure (S n)))
-eval' cs = do
-  case S.elems cs of
-    [] -> return S.empty
-    c:cs' -> eval' =<< S.union (S.fromList cs') <$> eval_ c
+eval' cs = trace' ("eval' " ++ show cs) $ do
+  sequence [eval_ c | c <- S.elems cs] 
   getVals <$> get <*> pure cs <*> pure S.empty
 
 getVals :: ClosureAnalysis (S n) -> S.Set (Closure (S n)) -> S.Set (Closure (S n)) ->  S.Set (Closure (S n))
-getVals m cs visited = S.unions $ (vs:) $ S.toList $ S.map (maybe (error "EMPTY!") id . flip M.lookup m) es
+getVals m cs visited = trace' ("getVal "++show cs) $ S.unions $ (vs:) $ S.toList $ S.map (gv . maybe S.empty id . flip M.lookup m) es
   where (vs, es) = S.partition (VM.isValue . fst) cs 
         gv cs' = getVals m (cs' S.\\ visited) (visited `S.union` cs)
+
+getFurthest :: ClosureAnalysis (S n) -> S.Set (Closure (S n)) -> S.Set (Closure (S n)) ->  S.Set (Closure (S n))
+getFurthest m cs visited = trace' ("getFurthest "++show cs) $ S.unions $ S.toList $ S.map gv (cs S.\\ visited)
+  where gv c = case M.lookup c m of
+                  Just cs' -> getFurthest m cs' (visited `S.union` S.singleton c)
+                  Nothing -> S.singleton c
+
+lu c m def = maybe def id $ M.lookup c m
+trace' = flip const 
 
 -- Eval_ binds to its closure to the next equivalent closure found, and returns
 -- the values it is equivalent to by calling eval' on that subsequent closure
 -- when necessary
 eval_ :: EnvC n => Closure (S n) -> State (ClosureAnalysis (S n)) (S.Set (Closure (S n)))
-eval_ c@(t, env) = get >>= \map -> case M.lookup c map of
-  Just cs -> eval' $ S.filter (\c'@(t,e) -> c' /= c && not (VM.isValue t)) cs
+eval_ c@(t, env) = trace' ("eval_ " ++ show c) $ get >>= \map -> case trace' (ppca map) M.lookup c map of
+  Just cs | not $ VM.isValue t -> eval' $ getFurthest map cs S.empty
+          | otherwise -> set c $ S.singleton c
   Nothing -> case t of
     VM.Lam l v t -> set c $ S.singleton c
     VM.Lit l i -> set c $ S.singleton c
@@ -114,11 +128,25 @@ eval_ c@(t, env) = get >>= \map -> case M.lookup c map of
       mexprs <- S.toList <$> eval' (S.singleton (m, env))
       let applyLams = S.fromList [(b, push (v, (n, restrict env)) lamenv) | (VM.Lam l v b, lamenv) <- mexprs]
       sequence [set (v', Env []) (S.singleton (n, env)) | (VM.Lam l v b, lamenv) <- mexprs, v' <- binders v b]
-      set c applyLams
-      lamVals <- eval' applyLams
-      litVals <- S.unions <$> sequence [eval' $ S.singleton (VM.App l n t', env) | (t'@(VM.Lit l i), _) <- mexprs]
-      worldVals <- S.unions <$> sequence [eval' $ S.singleton (VM.App l n t', env) | (t'@(VM.World l), _) <- mexprs]
-      return $ litVals `S.union` lamVals `S.union` worldVals
+      let applyLits = S.fromList [(VM.App l n t', env) | (t'@(VM.Lit l i), _) <- mexprs]
+      let applyWorlds = S.fromList [(VM.App l n t', env) | (t'@(VM.World l), _) <- mexprs]
+      set c $ applyLams `S.union` applyLits `S.union` applyWorlds
+      eval' $ applyLams `S.union` applyLits `S.union` applyWorlds
+
+fvs :: VM.LExpr -> S.Set String
+fvs e = case e of
+  VM.Var l v -> S.singleton v
+  VM.Lam l v b -> fvs b S.\\ S.singleton v
+  VM.App l m n -> fvs m `S.union` fvs n
+  _ -> S.empty
+
+-- Scope takes free variables and returns the set of closures bound
+scope :: S.Set String -> Env (S n) -> [Binding n]
+scope vs env = case (S.size vs, env) of 
+  (0, _) -> []
+  (_, Env []) -> []
+  (n, Env (b@(v,c):bs)) | S.member v vs -> b:scope (vs S.\\ S.singleton v) (Env bs)
+                        | otherwise -> scope (vs S.\\ S.singleton v) (Env bs)
 
 binders :: String -> VM.LExpr -> [VM.LExpr]
 binders v e = case e of
@@ -131,6 +159,9 @@ set :: EnvC n => Closure n -> S.Set (Closure n) -> State (ClosureAnalysis n) (S.
 set c vs = modify (M.insertWith S.union c vs) >> return vs
 
 ppca :: ClosureAnalysis n -> String
-ppca m = concat.intersperse "\n".map pp.M.toList.M.map S.toList $ M.filterWithKey (\k v -> not . VM.isValue . fst $ k) $ m
-  where pp (v, ls) = show v ++ ":" ++ (concat . intersperse ", " . map show) ls
-        ppexpr t = (\s->if length s == 20 then (s ++ "...") else s) $ take 20 $ show t
+ppca m = concat.intersperse "\n".map pp.M.toList $ M.filterWithKey (\k v -> not . VM.isValue . fst $ k) $ m
+  where pp ((t,e), ls) =  ppexpr t ++ ":" ++ ppset ls
+
+ppexpr t = (\s->if length s == 20 then (s ++ "...") else s) $ take 30 $ VM.showlabeled t
+      
+ppset ls = (concat . intersperse ", " . map (ppexpr . fst) . S.elems) ls 
