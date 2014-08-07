@@ -1,34 +1,44 @@
 module Analysis where
+import GHC.TypeLits
 import qualified LC
-import qualified Data.IntMap as M
-import qualified Data.IntSet as S
-import qualified Data.Map as Map
-import qualified Data.Set as Set
+import qualified Data.Map as M
+import qualified Data.Set as S
 import Debug.Trace (trace)
 import Data.Maybe (maybe, fromJust)
 import Data.List (intersperse)
 import Control.Monad.State
-import Control.Applicative
+import Control.Applicative ((<$>), (<*>))
 import IO
 import qualified Data.GraphViz as GV
-import VM
+import VM (LExpr (..), returnval, isValue, getLabel)
 import Data.Array
+import Data.List (sortBy)
 
 -- Types
-type Analysis = M.IntMap
-type Labels = S.IntSet
-type ValueAnalysis = Analysis S.IntSet -- Set of values possible at a location
-type VariableAnalysis = Analysis S.IntSet -- Set of variables that can be called
-type FreeVariableAnalysis = Analysis S.IntSet -- Free variables' binding locations at a location
-type CheckList = Analysis Bool -- Free variables at a location
+data Closure = Closure {term :: LExpr, env :: [Binding]} deriving (Eq, Ord)
+
+instance Show Closure where
+  show (Closure t e) = "<" ++ show t ++ " | " ++ show e ++ ">"
+type Var = String
+type Label = Int
+type Binding = (String, Closure)
+
+type Analysis = M.Map LExpr
+
+type ClosureAnalysis = M.Map Closure (S.Set Closure) 
+type CFA = (S.Set Closure, ClosureAnalysis)
+
+restrict :: Int -> Closure -> Closure
+restrict 0 (Closure t e) = Closure t []
+restrict i (Closure t e) = Closure t [(v, restrict (i-1) c) | (v,c) <- e]
 
 -- Binds lambda to its variables
-binders :: LExpr -> Analysis Labels
+binders :: LExpr -> M.Map Label [LExpr]
 binders e = bind e [] 
-  where bind e env = case e of 
-          Var l v -> M.singleton (maybe (error$"unbound variable: " ++ v) id (lookup v env)) (S.singleton l)
-          Lam l v e -> bind e $ (v,l):env 
-          App l m n -> M.unionWith S.union (bind m env) (bind n env)
+  where bind e env = trace' ("binders: " ++ show e) $ case e of 
+          Var l v -> M.singleton (maybe (error$"unbound variable: " ++ v) id (lookup v env)) [e]
+          Lam l v e' -> bind e' $ (v,l):env 
+          App l m n -> M.unionWith (++) (bind m env) (bind n env)
           Op l o -> case o of
             LC.Le -> bool 
             LC.Ge -> bool 
@@ -36,93 +46,123 @@ binders e = bind e []
             LC.Gt -> bool 
             LC.Eq -> bool 
             LC.Neq -> bool 
-            LC.Syscall n -> binders (returnval l)
-            LC.Read n -> binders (returnval l)
+            LC.Syscall n -> binders (returnval $ getLabel e)
+            LC.Read n -> binders (returnval $ getLabel e)
             _ -> M.empty
-            where bool = M.fromList [(v, S.singleton l) | (var, v) <- take 2 $ drop 2 env]
+            where bool = M.fromList [(v, [e]) | (var, v) <- take 2 $ drop 2 env]
           _ -> M.empty           
 
--- Body of lambda expressions
-bodies :: LExpr -> Analysis Label
-bodies (Lam l v e) = M.insert l (getLabel e) $ bodies e 
-bodies (App l m n) = M.union (bodies m) (bodies n)
-bodies _ = M.empty
+size :: M.Map a (S.Set b) -> Int
+size = sum . map S.size . M.elems
 
--- Closure analysis
-ca :: LExpr -> ValueAnalysis
-ca e = ca'' M.empty where 
-  ca'' :: ValueAnalysis -> ValueAnalysis 
-  ca'' mu = if trace (show (length $ M.keys mu, sum $ map (sum . S.toList) $ M.elems mu))
-               mu == mu' then mu else ca'' mu' where (_, mu') = ca' e (S.empty, mu)
-  ca' :: LExpr -> (S.IntSet, ValueAnalysis) -> (S.IntSet, ValueAnalysis)
-  ca' e (ch,mu) | (S.member (getLabel e) ch) = (ch,mu)
-  ca' (Var l v) (ch,mu) = let 
-    params = [(l',fjlu l' exps) | l' <- S.toList $ lu l mu]
-    (ch', mu') = foldr ca' (S.insert l ch,mu) (map snd params)
-    in (ch', M.fromListWith S.union [(l, lu l' mu') | (l',_) <- params] `union` mu')
-  ca' (Lam l v e) (ch,mu) = ca' e (S.insert l ch, M.insert l (S.singleton l) mu)
-  ca' (App l e1 e2) (ch, mu) = ca' e1 (S.insert l ch', M.unionsWith S.union [mu', lazyBodies, lazyBinders])
-    where (strictch, strictmu) = ca' e2 (S.insert l ch, M.unionsWith S.union [mu, strictBodies, strictBinders])
-          lits = filter islit $ S.toList $ lu (getLabel e1) mu
-          strictLams = [lam | lam <- S.toList $ lu (getLabel e2) mu, islam lam]
-          strictBodies = M.fromListWith S.union [(l, lu (lam + 1) mu) | lam <- strictLams ]
-          strictBinders = M.fromListWith S.union 
-                            [(v, S.singleton lit) | 
-                             lit <- lits,
-                             lam <- strictLams,
-                             v <- S.toList $ lu lam bins]
-          lazyLams = [lam | lam <- S.toList $ lu (getLabel e1) mu, islam lam] 
-          lazyBodies = M.fromListWith S.union [(l, lu (lam + 1) mu) | lam <- lazyLams]
-          lazyBinders = M.fromListWith S.union 
-                          [(v, S.singleton $ getLabel e2) | 
-                           lam <- lazyLams,
-                           v <- S.toList $ lu lam bins]
-          (ch', mu') = if null lits then (ch, mu) else (strictch, strictmu)
-  ca' (Lit l i) (ch,mu) = (S.insert l ch, M.insert l (S.singleton l) mu)
-  ca' (World l) (ch,mu) = (S.insert l ch, M.insert l (S.singleton l) mu)
-  ca' (Op l o) (ch,mu) = case o of 
-    LC.Syscall n -> ca' (returnval l) (ch', mu')
-    LC.Write w -> ca' (World $ l+1) (ch', mu')
-    LC.Read w -> ca' (returnval l) (ch', mu')
-    LC.Add -> lit
-    LC.Sub -> lit    
-    LC.Mul -> lit
-    LC.Div -> lit
-    LC.Mod -> lit
-    LC.Le -> bool
-    LC.Ge -> bool 
-    LC.Lt -> bool 
-    LC.Gt -> bool 
-    LC.Eq -> bool 
-    LC.Neq -> bool 
-    where (ch', mu') = (S.insert l ch, M.insert l (S.singleton (l+1)) mu)
-          lit = ca' (Lit (l+1) Nothing) (ch', mu')
-          params = [(l',fjlu l' exps) | l' <- S.toList $ lu l mu]
-          (boolch, boolmu) = foldr ca' (ch',mu) (map snd params)
-          bool = (boolch, M.fromListWith S.union [(l, lu l' boolmu) | (l',_) <- params] `union` boolmu)
+ca' ca t = getVals ca (S.singleton (t `Closure` [])) S.empty
+
+summarize ca = foldr f M.empty $ M.keys ca
+  where f c m = M.insertWith S.union (term c) (getVals ca (S.singleton c) S.empty) m
+
+sizes :: ClosureAnalysis -> [(LExpr, ((Int, Int), (Int, Int)))]
+sizes ca = sortBy (\(a,b) (c,d) -> compare b d) $ M.toList $ foldr f M.empty $ M.keys ca
+  where f c m = M.insertWith g (term c) (val c) m
+        g ((a,b),(c,d)) ((a',b'),(c',d')) = ((a+a',b+b'),(c+c',d+d'))
+        val c = case (env c) of
+          [] -> ((1,S.size $ fjlu c ca), (0,0))
+          env -> ((0,0), (1,S.size $ fjlu c ca))
+
+ca :: Int -> LExpr -> ClosureAnalysis
+ca dep e = findFixed M.empty where
+  findFixed :: ClosureAnalysis -> ClosureAnalysis
+  findFixed mu = trace (show $ size mu) $ trace' ("ca: " ++ ppca mu) $ if size mu == size mu' 
+    then mu 
+    else findFixed mu' 
+    where (_, mu') = eval (e `close` []) (S.empty, mu)
+  eval :: Closure -> CFA -> CFA
+  eval c (ch, mu) | S.member c ch = (ch, mu)
+  eval c (ch, mu) = trace' ("eval: " ++ show c) $ case term c of
+    Var l v -> next (ch,mu) c $ maybe (fjlu (term c `close` []) mu) S.singleton $ lookup v $ env c
+    App l m n -> next (nextch, nextmu) c $ S.fromList nextbods
+      where (nextch, nextmu, nextbods) = if null mlits 
+              then (mch, mmu `union` mvarmu, mbods)
+              else (S.union mch nch, M.unionsWith S.union [mmu, nmu, mvarmu, nvarmu], nbods ++ mbods)
+            (mch, mmu) = eval (m `close` env c) (S.insert c ch, mu)
+            mvals = S.elems $ getVals mu (S.singleton (m `close` env c)) S.empty
+            mbods = [restrict dep (b `close` (:) (v, (n `close` (env c))) env') | Closure (Lam l v b) env' <- mvals ]
+            mvars = [M.fromList [((v' `close` []), S.singleton (n `close` env c)) | v' <- lu l bins] | Closure (Lam l v b) env' <- mvals]
+            mvarmu = M.unionsWith S.union mvars
+            mlits = filter islit $ mvals
+            (nch, nmu) = eval (n `close` env c) (S.insert c ch, mu)
+            nlams = [c | c@(Closure (Lam l v b) env') <- S.elems $ getVals nmu (S.singleton (n `close` env c)) S.empty]
+            nbods = [restrict dep (b `close` (:) (v, l') env') | Closure (Lam l v b) env' <- nlams, l' <- mlits]
+            nvars = [M.fromList [((v' `close` []), S.singleton l') | v' <- lu l bins] | Closure (Lam l v b) env' <- nlams, l' <- mlits]
+            nvarmu = M.unionsWith S.union nvars 
+    Op l o -> case o of 
+      LC.Syscall n -> next (ch,mu) c $ S.singleton (returnval l `Closure` [])
+      LC.Write w -> next (ch,mu) c $ S.singleton (returnval l `Closure` [])
+      LC.Read w -> next (ch,mu) c $ S.singleton (returnval l `Closure` [])
+      LC.Add -> lit
+      LC.Sub -> lit    
+      LC.Mul -> lit
+      LC.Div -> lit
+      LC.Mod -> lit
+      LC.Le -> bool
+      LC.Ge -> bool 
+      LC.Lt -> bool 
+      LC.Gt -> bool 
+      LC.Eq -> bool 
+      LC.Neq -> bool 
+      where lit = next (ch,mu) c $ S.singleton (Lit (l+1) Nothing `Closure` [])
+            bool = next (ch,mu) c $ case env c of 
+              [a,b,(_,ct),(_,cf)] -> S.fromList [ct, cf]
+              _ -> fjlu (term c `close` []) mu
+    _ -> next (ch,mu) c $ S.singleton c
+    where next (ch,mu) c s = S.foldr eval (S.insert c ch, M.insert c s mu) s
+          islit c = case term c of World _ -> True; Lit _ _ -> True; _ -> False
   bins = binders e
-  bods = bodies e
-  exps = expr e
   fvs = fv e
-  islam l = case fjlu l exps of Lam _ _ _ -> True; _ -> False
-  islit l = case fjlu l exps of Lit _ _ -> True; World _ -> True; _ -> False
-  sizeof mu = sum $ M.elems $ M.map S.size mu
+  close :: VM.LExpr -> [Binding] -> Closure
+  close t bs = Closure t $ scope (S.fromList (fjlu (getLabel t) fvs)) bs
 
+scope :: S.Set String -> [Binding] -> [Binding]
+scope vs env = case (S.size vs, env) of 
+  (0, _) -> []
+  (_, []) -> []
+  (n, (b@(v,c):bs)) | S.member v vs -> b:scope (S.delete v vs) bs
+                    | otherwise -> scope vs bs
+
+union :: (Ord a, Ord b) => M.Map a (S.Set b) -> M.Map a (S.Set b) -> M.Map a (S.Set b)
+union = M.unionWith S.union
+
+trace' = flip const
+
+getVals :: ClosureAnalysis -> S.Set Closure -> S.Set Closure ->  S.Set Closure
+getVals m cs visited = trace' ("getVal "++show cs) $ S.unions $ (vs:) $ S.toList $ S.map (gv . maybe S.empty id . flip M.lookup m) es
+  where (vs, es) = S.partition (isValue . term) cs 
+        gv cs' = getVals m (cs' S.\\ visited) (visited `S.union` cs)
+
+ppca :: ClosureAnalysis -> String
+ppca m = concat.intersperse "\n".map pp.M.toList $ M.filterWithKey (\k v -> not . VM.isValue . term $ k) $ m
+  where pp (c, ls) =  "<" ++ ppexpr (term c) ++ "," ++ show (env c) ++ ">" ++ ": " ++ ppset ls
+
+ppta :: M.Map LExpr (S.Set Closure) -> String
+ppta m = concat.intersperse "\n".map pp.M.toList $ M.filterWithKey (\k v -> not . VM.isValue $ k) $ m
+  where pp (t, ls) =  ppexpr t ++ ":" ++ ppset ls
+
+ppexpr t = (\s->if length s == 30 then (s ++ "...") else s) $ take 30 $ show t
+       
+ppset ls = (concat . intersperse ", " . map (ppexpr . term) . S.elems) ls 
+              
 -- Free variable analysis
-fv :: LExpr -> Analysis [Int]
+fv :: LExpr -> M.Map Int [String]
 fv = fv' [] where
-  fv' bs (Var l v) = case lookup v bs of
-    Nothing -> error $ "unbound var: "++v
-    Just l' -> M.singleton l $ [l']
-  fv' bs (Lam l v e) = M.insert l (filter (/= l) $ fjlu (getLabel e) fve) fve
-    where fve = fv' ((v,l):bs) e 
+  fv' bs (Var l v) = M.singleton l [v]
+  fv' bs (Lam l v e) = M.insert l (filter (/= v) $ fjlu (getLabel e) fve) fve
+    where fve = fv' (v:bs) e 
   fv' bs (App l m n) = M.insert l (fjlu (getLabel m) fvmn ++ 
                                   (fjlu (getLabel n) fvmn)) fvmn
-    where fvmn = fv' bs m `M.union` fv' bs n 
+    where fvmn = fv' bs m `M.union` fv' bs n
   fv' bs (Op l o) = case o of
-    LC.Syscall n -> frees $ n + 3 
-    LC.Write w ->  frees 3
-    LC.Read w -> frees 2
+    LC.Syscall n -> frees (n + 3) `M.union` (fv $ returnval l)
+    LC.Write w ->  frees 3 `M.union` (fv $ returnval l)
+    LC.Read w -> frees 2 `M.union` (fv $ returnval l)
     LC.Add -> frees 2
     LC.Sub -> frees 2
     LC.Mul -> frees 2
@@ -134,25 +174,10 @@ fv = fv' [] where
     LC.Gt -> frees 4
     LC.Eq -> frees 4
     LC.Neq -> frees 4
-    where frees n = M.singleton l $ map snd $ take n bs
-  fv' bs (World l) = M.empty
-  fv' bs (Lit l i) = M.empty
+    where frees n = M.singleton l $ take n bs
+  fv' bs (World l) = M.singleton l $ []
+  fv' bs (Lit l i) = M.singleton l $ []
 
--- Utility functions
-union :: M.IntMap S.IntSet -> M.IntMap S.IntSet -> M.IntMap S.IntSet
-union = M.unionWith S.union
-
-lu :: M.Key -> M.IntMap S.IntSet -> S.IntSet
-lu k m = maybe S.empty id $ M.lookup k m  
-
-fjlu :: Int -> M.IntMap a -> a
-fjlu v = maybe (error $ "couldn't find: " ++ show v) id . M.lookup v
-
-ppca :: LExpr -> ValueAnalysis -> String
-ppca e m = concat.intersperse "\n".map pp.M.toList.M.map (filter valuefilter.S.toList).M.filterWithKey keyfilter $ m
-  where pp (v, ls) = ppexpr v ++ ":" ++ (concat . intersperse ", " . map ppexpr) ls
-        ppexpr v = (\s->if length s == 20 then (s ++ "...") else s) $ take 20 $ show $ maybe (Var v "?") id (M.lookup v exps)
-        exps = expr e
-        keyfilter k v = not $ isValue $ fjlu k exps 
-        valuefilter v = isValue $ fjlu v exps
+fjlu l m = maybe (error $ "fjlu " ++ show l) id $ M.lookup l m
+lu k m = maybe [] id $ M.lookup k m  
 

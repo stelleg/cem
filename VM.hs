@@ -102,6 +102,17 @@ labeled e = evalState (labeled' e) 0
         labeled' LC.World = World <$> incr 1
         incr n = do i <- get; put (i+n); return i
 
+relabeled :: LExpr -> LExpr
+relabeled e = evalState (labeled' e) 0
+  where labeled' :: LExpr  -> State Int LExpr
+        labeled' (Lam _ v e) = Lam <$> incr 1 <*> pure v <*> labeled' e
+        labeled' (App _ m n) = App <$> incr 2 <*> labeled' m <*> labeled' n
+        labeled' (Var _ v) = Var <$> incr 1 <*> pure v
+        labeled' (Lit _ i) = Lit <$> incr 1 <*> pure i
+        labeled' (Op _ o) = Op <$> incr 7 <*> pure o  -- worst case
+        labeled' (World _) = World <$> incr 1
+        incr n = do i <- get; put (i+n); return i
+
 vlookup v e h = maybe (error $ "unbound var: " ++ v) match (M.lookup e (snd h))
   where match (v', cl, e') = if v == v' then (cl, e) else vlookup v e' h
 
@@ -192,6 +203,12 @@ todot ((c,e), (i,h), s) = digraph (Str "State") $ do
     graphAttrs [textLabel "Heap"]
     node 0 [shape Record, textLabel "0=•"]
     let nodes = M.toList h
-    mapM (\(i,(s,(c,e'),e)) -> node i [shape Record, textLabel (pack $ show i ++ "↦" ++ s ++ "=" ++ show c)]) nodes
+    mapM (\(i,(s,(c,e'),e)) -> node i [shape Record, textLabel (pack . process $ show i ++ " : " ++ s ++ " = " ++ show c)]) nodes
     mapM (\(i,(s,(c,e'),e)) -> edge i e []) nodes 
     mapM (\(i,(s,(c,e'),e)) -> edge i e' [style dashed]) nodes 
+
+process s = filter f s
+  where f '>' = False
+        f '<' = False
+        f  c =  True
+      

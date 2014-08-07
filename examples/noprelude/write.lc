@@ -1,0 +1,26 @@
+## Memory read and write wrappers ##
+mvq = \val.\addr.\w.[w addr val \a.\b.\w._@q]
+rdq = \addr.\w.[w addr \a.\w._$q]
+mvl = \val.\addr.\w.[w addr val \a.\b.\w._@l]
+rdl = \addr.\w.[w addr \a.\w._$l]
+mvs = \val.\addr.\w.[w addr val \a.\b.\w._@s]
+rds = \addr.\w.[w addr \a.\w._$s]
+mvb = \val.\addr.\w.[w addr val \a.\b.\w._@b]
+rdb = \addr.\w.[w addr \a.\w._$b]
+mv = mvq
+rd = rdq
+
+# Tuple
+pair = \f.\s.\p.(p f s)
+
+# Monad
+>>= = \c.\f.\w.(c w f)
+>> = \c.\f.\w.(c w \v.f)
+return = pair
+
+main = (>>= (rd 1) \a.
+       (>>  (mv a 1)
+       (>>= (rd 1) \c.
+       (return c))))
+       
+       

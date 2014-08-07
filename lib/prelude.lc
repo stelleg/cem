@@ -44,8 +44,7 @@ nil? = \l.(l true \h.\t.false)
 pair = \f.\s.\p.(p f s)
 
 # Monad
-bind = \c.\f.\w.(c w f)
->>= = bind
+>>= = \c.\f.\w.(c w f)
 >> = \c.\f.\w.(c w \v.f)
 return = pair
 
@@ -141,4 +140,3 @@ lookup = \elem.\eqfun.(Y \lookup.\l.(l
 
 # Fun unicode synonyms
 ∘ = compose
-
