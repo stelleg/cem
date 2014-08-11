@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds #-}
 
 import System.Environment as SE
+import qualified Utils as U
 import System.Process (system)
 import Paths_cem (getDataFileName)
 import Text.ParserCombinators.Parsec hiding (label)
@@ -13,7 +14,7 @@ import Control.Applicative
 import System.Exit
 import qualified Data.Map as M
 import qualified AI
-import qualified ZFA
+import qualified MZFA as ZFA
 import qualified State as S
 import qualified Data.Set  as Set
 libs = mapM getDataFileName ["lib/prelude.lc", "lib/os.lc", "lib/church.lc"]
@@ -40,7 +41,7 @@ parseOpts ('k':level) sources = readSources sources >>= cfak (read level)
 parseOpts "g" sources = graph =<< readSources sources
 parseOpts "r" sources = partial (\s->return()) =<< readSources sources 
 parseOpts "t" sources = partial (\((c,e),h,s)->print c) =<< readSources sources
-parseOpts "z" sources = cfaz =<< readSources sources
+parseOpts ('z':level) sources = cfaz (read level) =<< readSources sources
 parseOpts ('s':level) sources = readSources sources >>= case read level :: Int of
   1 -> \s -> (cfas s :: IO (S.AI 1)) >> return ()
   2 -> \s -> (cfas s :: IO (S.AI 2)) >> return ()
@@ -64,11 +65,11 @@ readSources s = concat <$> mapM chooseInput s
 version = putStrLn $ "0.1 Alpha"  
 usage = putStrLn $ "Usage: cem {-lhvdgpcf} {file(s)}"
 
-cfaz s = do 
+cfaz i s = do 
   let prog = VM.labeled $ IO.parseProgram s
-  let e = VM.relabeled $ ZFA.inline prog
+  let e = VM.relabeled $ U.opt prog
   putStrLn $ VM.showlabeled e
-  putStrLn $ ZFA.ppca e $ ZFA.ca e
+  putStrLn $ ZFA.ppca e $ ZFA.ca i e
 
 cfas s = do
   let prog = VM.labeled $ IO.parseProgram s
@@ -79,7 +80,7 @@ cfas s = do
   return states
 
 cfak i s = do
-  let prog = VM.labeled $ IO.parseProgram s
+  let prog = VM.relabeled $ U.opt $ VM.labeled $ IO.parseProgram s
   putStrLn $ VM.showlabeled prog
   let cfa = A.ca i prog
   let progvals = A.ca' cfa prog

@@ -1,11 +1,12 @@
-module ZFA where
+module MZFA where
 import qualified LC
+import Utils
 import qualified Data.IntMap as M
 import qualified Data.IntSet as S
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import Debug.Trace (trace)
-import Data.Maybe (maybe, fromJust)
+import Data.Maybe (maybe, fromJust, maybeToList, fromMaybe)
 import Data.List (intersperse)
 import Control.Monad.State
 import Control.Applicative
@@ -17,7 +18,7 @@ import Data.Array
 -- Types
 type Analysis = M.IntMap
 type Labels = S.IntSet
-type ValueAnalysis = Analysis S.IntSet -- Set of values possible at a location
+type ValueAnalysis = Analysis (Maybe S.IntSet) -- Maybe a set, where Nothing = Anything; 
 type VariableAnalysis = Analysis S.IntSet -- Set of variables that can be called
 type FreeVariableAnalysis = Analysis S.IntSet -- Free variables' binding locations at a location
 type CheckList = Analysis Bool -- Free variables at a location
@@ -48,60 +49,54 @@ bodies (Lam l v e) = M.insert l (getLabel e) $ bodies e
 bodies (App l m n) = M.union (bodies m) (bodies n)
 bodies _ = M.empty
 
-size = sum . map S.size . M.elems
+size = sum . concatMap maybeToList . map (S.size <$>) . M.elems
 
-fvs :: VM.LExpr -> Set.Set String
-fvs e = case e of
-  VM.Var l v -> Set.singleton v
-  VM.Lam l v b -> Set.delete v $ fvs b
-  VM.App l m n -> fvs m `Set.union` fvs n
-  _ -> Set.empty
+munion x y = S.union <$> x <*> y
 
-inline :: LExpr -> LExpr
-inline e = inline' e where 
-  inline' e = case e of 
-    App l n@(Lam l' v b) m | isValue m && fvs m == Set.empty -> replace v (inline m) (inline b)
-                           | otherwise -> App l (inline n) (inline m)
-    Lam l v b -> Lam l v $ inline' b
-    e -> e
-  replace v m e = case e of
-    Var l v' -> if v' == v then m else e
-    Lam l v' b -> if v' == v then e else Lam l v' $ replace v m b
-    App l n o -> App l (replace v m n) (replace v m o)
-    _ -> e
+restrict :: Int -> ValueAnalysis -> ValueAnalysis
+restrict i = M.map (size =<<)
+  where size s = if S.size s > i then Nothing else Just s
 
 -- Closure analysis
-ca :: LExpr -> ValueAnalysis
-ca e = ca'' M.empty where 
+ca :: Int -> LExpr -> ValueAnalysis
+ca i e = ca'' M.empty where 
   ca'' :: ValueAnalysis -> ValueAnalysis 
   ca'' mu = if trace (show $ size mu)
-               size mu == size mu' then mu else ca'' mu' where (_, mu') = ca' e (S.empty, mu)
+               mu == mu' then mu else ca'' (restrict i mu') where (_, mu') = ca' e (S.empty, mu)
   ca' :: LExpr -> (S.IntSet, ValueAnalysis) -> (S.IntSet, ValueAnalysis)
   ca' e (ch,mu) | (S.member (getLabel e) ch) = (ch,mu)
-  ca' (Var l v) (ch,mu) = let 
-    params = [(l',fjlu l' exps) | l' <- S.toList $ lu l mu]
-    (ch', mu') = foldr ca' (S.insert l ch,mu) (map snd params)
-    in (ch', M.fromListWith S.union [(l, lu l' mu') | (l',_) <- params] `union` mu')
-  ca' (Lam l v e) (ch,mu) = ca' e (S.insert l ch, M.insert l (S.singleton l) mu)
-  ca' (App l e1 e2) (ch, mu) = ca' e1 (S.insert l ch', M.unionsWith S.union [mu', lazyBodies, lazyBinders])
-    where (strictch, strictmu) = ca' e2 (S.insert l ch, M.unionsWith S.union [mu, strictBodies, strictBinders])
-          lits = filter islit $ S.toList $ lu (getLabel e1) mu
-          strictLams = [lam | lam <- S.toList $ lu (getLabel e2) mu, islam lam]
-          strictBodies = M.fromListWith S.union [(l, lu (lam + 1) mu) | lam <- strictLams ]
-          strictBinders = M.fromListWith S.union 
-                            [(v, S.singleton lit) | 
-                             lit <- lits,
-                             lam <- strictLams,
-                             v <- S.toList $ lu lam bins]
-          lazyLams = [lam | lam <- S.toList $ lu (getLabel e1) mu, islam lam] 
-          lazyBodies = M.fromListWith S.union [(l, lu (lam + 1) mu) | lam <- lazyLams]
-          lazyBinders = M.fromListWith S.union 
-                          [(v, S.singleton $ getLabel e2) | 
-                           lam <- lazyLams,
-                           v <- S.toList $ lu lam bins]
-          (ch', mu') = if null lits then (ch, mu) else (strictch, strictmu)
-  ca' (Lit l i) (ch,mu) = (S.insert l ch, M.insert l (S.singleton l) mu)
-  ca' (World l) (ch,mu) = (S.insert l ch, M.insert l (S.singleton l) mu)
+  ca' (Var l v) (ch,mu) = case lu l mu of
+    Just vs -> let  
+      params = [(l',fjlu l' exps) | l' <- S.elems vs]
+      (ch', mu') = foldr ca' (S.insert l ch,mu) (map snd params)
+      in (ch', M.fromListWith munion [(l, lu l' mu') | (l',_) <- params] `union` mu')
+    Nothing -> (S.insert l ch, M.insertWith munion l Nothing mu)
+  ca' (Lam l v e) (ch,mu) = ca' e (S.insert l ch, M.insert l (Just$S.singleton l) mu)
+  ca' (App l e1 e2) (ch, mu) = case lu (getLabel e1) mu of
+    Nothing -> ca' e2 (ca' e1 (S.insert l ch, M.insertWith munion l Nothing mu))
+    Just lazyvals -> ca' e1 (S.insert l ch', M.unionsWith munion [mu', lazyBodies, lazyBinders]) where
+      (strictch, strictmu) = ca' e2 (S.insert l ch, M.unionsWith munion [mu, strictBodies, strictBinders])
+      lits = filter islit $ S.elems lazyvals 
+      strictLams = [lam | lam <- maybe [] S.toList $ lu (getLabel e2) mu, islam lam]
+      strictBodies = M.fromListWith munion [(l, lu (lam + 1) mu) | lam <- strictLams ]
+      strictBinders = M.fromListWith munion 
+                        [(v, Just $ S.singleton lit) | 
+                         lit <- lits,
+                         lam <- strictLams,
+                         v <- S.toList $ fromMaybe S.empty $ M.lookup lam bins]
+      lazyLams = [lam | lam <- S.elems lazyvals, islam lam] 
+      lazyBodies = M.fromListWith munion [(l, lu (lam + 1) mu) | lam <- lazyLams]
+      lazyBinders = M.fromListWith munion 
+                      [(v, Just $ S.singleton $ getLabel e2) | 
+                       lam <- lazyLams,
+                       v <- maybe [] S.toList $ M.lookup lam bins]
+      (ch', mu') = if null lits 
+        then (ch, mu) 
+        else case lu (getLabel e2) mu of
+          Nothing -> ca' e2 (ca' e1 (S.insert l ch, M.insertWith munion l Nothing mu))
+          Just cs -> (strictch, strictmu)
+  ca' (Lit l i) (ch,mu) = (S.insert l ch, M.insert l (Just $ S.singleton l) mu)
+  ca' (World l) (ch,mu) = (S.insert l ch, M.insert l (Just $ S.singleton l) mu)
   ca' (Op l o) (ch,mu) = case o of 
     LC.Syscall n -> ca' (returnval l) (ch', mu')
     LC.Write w -> ca' (returnval l) (ch', mu')
@@ -117,11 +112,13 @@ ca e = ca'' M.empty where
     LC.Gt -> bool 
     LC.Eq -> bool 
     LC.Neq -> bool 
-    where (ch', mu') = (S.insert l ch, M.insert l (S.singleton (l+1)) mu)
+    where (ch', mu') = (S.insert l ch, M.insert l (Just $ S.singleton (l+1)) mu)
           lit = ca' (Lit (l+1) Nothing) (ch', mu')
-          params = [(l',fjlu l' exps) | l' <- S.toList $ lu l mu]
-          (boolch, boolmu) = foldr ca' (ch',mu) (map snd params)
-          bool = (boolch, M.fromListWith S.union [(l, lu l' boolmu) | (l',_) <- params] `union` boolmu)
+          bool = case lu l mu of 
+            Nothing -> (ch', mu)
+            Just vs -> (boolch, M.fromListWith munion [(l, lu l' boolmu) | (l',_) <- params] `union` boolmu)
+            where params = [(l',fjlu l' exps) | l' <- maybe [] S.toList $ lu l mu]
+                  (boolch, boolmu) = foldr ca' (ch',mu) (map snd params)
   bins = binders e
   bods = bodies e
   exps = expr e
@@ -161,18 +158,20 @@ fv = fv' [] where
   fv' bs (Lit l i) = M.empty
 
 -- Utility functions
-union :: M.IntMap S.IntSet -> M.IntMap S.IntSet -> M.IntMap S.IntSet
-union = M.unionWith S.union
+union :: ValueAnalysis -> ValueAnalysis -> ValueAnalysis
+union = M.unionWith munion
 
-lu :: M.Key -> M.IntMap S.IntSet -> S.IntSet
-lu k m = maybe S.empty id $ M.lookup k m  
+lu :: M.Key -> ValueAnalysis -> Maybe (S.IntSet)
+lu k m = fromMaybe (Just S.empty) $ M.lookup k m  
 
 fjlu :: Int -> M.IntMap a -> a
 fjlu v = maybe (error $ "couldn't find: " ++ show v) id . M.lookup v
 
 ppca :: LExpr -> ValueAnalysis -> String
-ppca e m = concat.intersperse "\n".map pp.M.toList.M.map (filter valuefilter.S.toList).M.filterWithKey keyfilter $ m
-  where pp (v, ls) = ppexpr v ++ ":" ++ (concat . intersperse ", " . map ppexpr) ls
+ppca e m = concat.intersperse "\n".map pp.M.toList.M.map (fmap (filter valuefilter.S.toList)).M.filterWithKey keyfilter $ m
+  where pp (v, ls) = case ls of 
+          Just ls -> ppexpr v ++ ":" ++ (concat . intersperse ", " . map ppexpr) ls
+          Nothing -> ppexpr v ++ ":" ++ "⊤"
         ppexpr v = (\s->if length s == 20 then (s ++ "...") else s) $ take 20 $ show $ maybe (Var v "?") id (M.lookup v exps)
         exps = expr e
         keyfilter k v = not $ isValue $ fjlu k exps 
