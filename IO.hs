@@ -152,6 +152,7 @@ data Instr =
   | TAIL Int
   | LIT Literal
   | OP Op
+  | WORLD
   deriving (Show, Eq)
 
 toMacros :: [Instr] -> [String] -> [String]
@@ -164,10 +165,14 @@ toMacro n i s = case i of
   TAKE -> printf "LAM L%d # %s" n s
   POP -> printf "UNUSED_LAM L%d # %s" n s
   LIT i -> printf "CONST L%d %d" n i
-  OP (Syscall i) -> concat $ [printf "entered_L%d:\n" n] 
-                          ++ [printf "LAM sys_lam_%d_%d\n" n k | k <- [0..i]] 
-                          ++ [printf "LOADVAR %s\n" (syscallregs!!k) | k <- [0..i-1]]
-                          ++ [printf "OP_SYSCALL L%d" n]
+  OP (Syscall i) -> unlines$ [printf "entered_L%d:" n]
+                          ++ ["movq 16(%rax), %rax"] -- World
+                          ++ ["LOADVARENV %rcx"] -- Syscall
+                          ++ [printf "LOADVARENV %s" reg | reg <- reverse $ take i syscallregs] -- Args
+                          ++ ["movq %rcx, %rax"]
+                          ++ ["syscall"]
+                          ++ ["movq %rax, %rdi"]
+                          ++ ["RETURNVAL ret_L" ++ show n]
   OP o -> flip (printf "OP_%s L%d") n $ case o of
     Add -> "ADD"
     Sub -> "SUB"
@@ -180,8 +185,16 @@ toMacro n i s = case i of
     Gt  -> "GT"
     Le  -> "LTE"
     Ge  -> "GTE"
-    Write w -> "WRITE" ++ show w
-    Read w -> "READ" ++ show w
+    Write w -> "WRITE " ++ showreg w
+    Read w -> "READ " ++ showreg w
+  WORLD -> printf "WORLD L%d" n
+
+showreg :: WordSize -> String
+showreg w = case w of
+  Word8 -> "dil"
+  Word16 -> "di"
+  Word32 -> "edi"
+  Word64 -> "rdi"
 
 -- This is x64 specific, need to make cross platform
 syscallregs = ["%rdi", "%rsi", "%rdx", "%r10", "%r8", "%r9"]
@@ -193,11 +206,27 @@ compile (Var i)    = [ENTER i]
 compile (App m n)  = PUSH (length ms + 1) : ms ++ compile n where ms = compile m
 compile (Lit l)    = [LIT l]
 compile (Op o)     = [OP o]
+compile World      = [WORLD]
 
 bound :: Int -> DBExpr -> Int
 bound i (Lam _ e) = bound (i+1) e
-bound i (Var i') = if i == i' then 1 else 0
+bound i (Var i') = fromEnum $ i == i'
 bound i (App m n) = bound i m + bound i n
+bound i (Op o) = case o of
+  Add -> fromEnum $ i < 2 
+  Sub -> fromEnum $ i < 2 
+  Div -> fromEnum $ i < 2 
+  Mul -> fromEnum $ i < 2 
+  Mod -> fromEnum $ i < 2 
+  Eq -> fromEnum $ i < 4
+  Neq -> fromEnum $ i < 4
+  Lt -> fromEnum $ i < 4
+  Gt -> fromEnum $ i < 4
+  Le -> fromEnum $ i < 4
+  Ge -> fromEnum $ i < 4
+  Write w -> fromEnum $ i < 3
+  Read w -> fromEnum $ i < 2
+  Syscall n -> fromEnum $ i < n + 2
 bound i _ = 0
 
 dec :: Int -> DBExpr -> DBExpr
@@ -214,4 +243,4 @@ debugging (Var v)    = [v]
 debugging (App m n)  = "":debugging m ++ debugging n
 debugging (Lit l)    = [""]
 debugging (Op o)     = [""]
-
+debugging World      = [""]

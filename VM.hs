@@ -41,26 +41,32 @@ expr e = case e of
   Var l v -> IM.singleton l e
   App l m n -> IM.insert l e (expr m `IM.union` expr n)
   Lam l v e' -> IM.insert l e (expr e')
-  Lit l i -> IM.singleton l e
+  Lit l i -> IM.insert l e $ expr $ litval l
   Op l o -> case o of
     LC.Syscall n -> IM.insert l e $ expr $ returnval l
-    LC.Write w -> IM.insert l e $ expr $ World $ l + 1 
+    LC.Write w -> IM.insert l e $ expr $ returnval l 
     LC.Read w -> IM.insert l e $ expr $ returnval l
-    LC.Add -> IM.insert l e $ expr $ Lit (l + 1) Nothing
-    LC.Sub -> IM.insert l e $ expr $ Lit (l + 1) Nothing
-    LC.Mul -> IM.insert l e $ expr $ Lit (l + 1) Nothing
-    LC.Div -> IM.insert l e $ expr $ Lit (l + 1) Nothing
-    LC.Mod -> IM.insert l e $ expr $ Lit (l + 1) Nothing
+    LC.Add -> IM.insert l e $ expr $ litval l 
+    LC.Sub -> IM.insert l e $ expr $ litval l 
+    LC.Mul -> IM.insert l e $ expr $ litval l
+    LC.Div -> IM.insert l e $ expr $ litval l 
+    LC.Mod -> IM.insert l e $ expr $ litval l 
     LC.Le -> IM.singleton l e 
     LC.Ge -> IM.singleton l e
     LC.Lt -> IM.singleton l e
     LC.Gt -> IM.singleton l e
     LC.Eq -> IM.singleton l e
     LC.Neq -> IM.singleton l e
-  World l -> IM.singleton l $ World l
+  World l -> IM.insert l e $ expr $ worldval l
 
 returnval :: Int -> LExpr
 returnval l = Lam (l+1) "f" $ App (l+2) (App (l+3) (Var (l+4) "f") (Lit (l+5) Nothing)) (World $ l+6) 
+
+litval :: Int -> LExpr
+litval l = Lam (l+1) "f" $ App (l+2) (Var (l+3) "f") (Lit (l+4) Nothing)
+
+worldval :: Int -> LExpr
+worldval l = Lam (l+1) "f" $ App (l+2) (Var (l+3) "f") (World $ l+4)
 
 showIndex :: Int -> String
 showIndex i = map (toEnum . (+ 8272) . fromEnum) $ show i 
@@ -97,9 +103,9 @@ labeled e = evalState (labeled' e) 0
         labeled' (LC.Lam l e) = Lam <$> incr 1 <*> pure l <*> labeled' e
         labeled' (LC.App m n) = App <$> incr 2 <*> labeled' m <*> labeled' n
         labeled' (LC.Var v) = Var <$> incr 1 <*> pure v
-        labeled' (LC.Lit l) = Lit <$> incr 1 <*> pure (Just l)
+        labeled' (LC.Lit l) = Lit <$> incr 5 <*> pure (Just l)
         labeled' (LC.Op o) = Op <$> incr 7 <*> pure o  -- worst case
-        labeled' LC.World = World <$> incr 1
+        labeled' LC.World = World <$> incr 5 
         incr n = do i <- get; put (i+n); return i
 
 relabeled :: LExpr -> LExpr
@@ -167,7 +173,6 @@ cem ((Op i o, e), h, cs) = (\(t, e', cs') -> ((t, e'), h, cs')) <$>
       LC.Gt -> toChurch ((>) t' t) ct cf cs where (Lit _ (Just t), _):(Lit _ (Just t'), _):cf:ct:e' = env e h
       LC.Eq -> toChurch ((==) t' t) ct cf cs where (Lit _ (Just t), _):(Lit _ (Just t'), _):cf:ct:e' = env e h
       LC.Neq -> toChurch ((/=) t' t) ct cf cs  where (Lit _ (Just t), _):(Lit _ (Just t'), _):cf:ct:e' = env e h
-     
 
 pair' l f s = App l (App l (labeled pair) s) f
 toChurch b (ct,et) (cf,ef) cs = if b then (ct,et,cs) else (cf,ef,cs)

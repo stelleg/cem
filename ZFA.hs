@@ -1,4 +1,4 @@
-module MZFA where
+module ZFA where
 import qualified LC
 import Utils
 import qualified Data.IntMap as M

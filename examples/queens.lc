@@ -6,4 +6,4 @@ safe = (Y \safe.\x.\d.\qs.(qs true
 gen = \nq.(Y \gen.\n.(n = 0 (cons nil nil) (concatMap \b.(concatMap \q.(safe q 1 b 
   (cons (cons q b) nil) nil) (range 1 nq)) (gen (n - 1)))) nq)
 
-main = [putStrLn showInt length gen 5]
+main = [putStrLn showInt length gen 8]

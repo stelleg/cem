@@ -1,0 +1,5 @@
+trans = (foldr (zipWith :) (repeat ;))
+
+main = (interact \in.
+  [unlines (map unwords)
+   trans (map words) lines in])

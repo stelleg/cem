@@ -123,7 +123,7 @@ sum = (foldr + 0)
 max = \x.\y.(x > y x y)
 min = \x.\y.(x < y x y)
 unlines = (concatMap (flip append "\n"))
-applyFromList = (Y \al.\f.\l.(l f \h.\t.(al (f h) t))) 
+apply = (Y \al.\f.\l.(l f \h.\t.(al (f h) t))) 
 signum = \n.(n = 0 0 (n > 0 1 (-' 1)))
 abs = \n.(n < 0 (0 - n) n)
 zipWith = \f.(Y \zipWith.\as.\bs.(as nil \a.\at.(bs nil \b.\bt.

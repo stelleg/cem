@@ -78,7 +78,7 @@ ca dep e = findFixed M.empty where
   eval :: Closure -> CFA -> CFA
   eval c (ch, mu) | S.member c ch = (ch, mu)
   eval c (ch, mu) = trace' ("eval: " ++ show c) $ case term c of
-    Var l v -> next (ch,mu) c $ maybe (fjlu (term c `close` []) mu) S.singleton $ lookup v $ env c
+    Var l v -> next (ch,mu) c $ maybe (fjlue ("unbound var in global store: " ++ show c) (term c `close` []) mu) S.singleton $ lookup v $ env c
     App l m n -> next (nextch, nextmu) c $ S.fromList nextbods
       where (nextch, nextmu, nextbods) = if null mlits 
               then (mch, mmu `union` mvarmu, mbods)
@@ -178,6 +178,7 @@ fv = fv' [] where
   fv' bs (World l) = M.singleton l $ []
   fv' bs (Lit l i) = M.singleton l $ []
 
+fjlue err l m = maybe (error err) id $ M.lookup l m
 fjlu l m = maybe (error $ "fjlu " ++ show l) id $ M.lookup l m
 lu k m = maybe [] id $ M.lookup k m  
 

@@ -1,3 +1,3 @@
-sys_exit = \code.\w.[w code \a.(\t.\w._!1 60)]
+sys_exit = \code.\w.[w 60 code \a.\t.\w._!1]
 
 main = (sys_exit 5)

@@ -1,10 +1,12 @@
+= = \a.\b.\t.\f.[b a \m.\n._=]
+- = \a.\b.[b a \m.\n._-]
 fst = \f.\s.f
 snd = \f.\s.s
 Y = \g.(\x.[g x x] \x.[g x x])
 f = (Y \f.(\odd.\even.\p.(p
-    \n.([n 0 =] \t.\f.f (even [n 1 -]))
-    \n.([n 0 =] \t.\f.t (odd [n 1 -]))) (f fst) (f snd)))
+    \n.(= n 0 \t.\f.f (even (n - 1)))
+    \n.(= n 0 \t.\f.t (odd (n - 1)))) (f fst) (f snd)))
 odd = (f fst)
 even = (f snd)
 
-(odd 6 0 1)
+main = \w.\p.(odd 6 0 1)

@@ -1,2 +1,2 @@
 rdb = \addr.\w.[w addr \a.\w._$b]
-main = (rdb 0) 
+main = (rdb 0)

@@ -64,4 +64,4 @@ writeFd = \fd.\str.(>>= newPage \iobuf.(Y \writeFd.\str.
 putStrLn = \s.(>> (writeFd 1 s) (writeFd 1 "\n"))
 print = putStrLn
 
-main = (print "Hello world\n")
+main = (print "Hello world")

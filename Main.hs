@@ -14,7 +14,7 @@ import Control.Applicative
 import System.Exit
 import qualified Data.Map as M
 import qualified AI
-import qualified MZFA as ZFA
+import qualified ZFA as ZFA
 import qualified State as S
 import qualified Data.Set  as Set
 libs = mapM getDataFileName ["lib/prelude.lc", "lib/os.lc", "lib/church.lc"]
@@ -40,7 +40,7 @@ parseOpts "f" sources = freevars =<< readSources sources
 parseOpts ('k':level) sources = readSources sources >>= cfak (read level)
 parseOpts "g" sources = graph =<< readSources sources
 parseOpts "r" sources = partial (\s->return()) =<< readSources sources 
-parseOpts "t" sources = partial (\((c,e),h,s)->print c) =<< readSources sources
+parseOpts "t" sources = partial (\((c,e),h,s)->putStrLn $ take 30 $ show c) =<< readSources sources
 parseOpts ('z':level) sources = cfaz (read level) =<< readSources sources
 parseOpts ('s':level) sources = readSources sources >>= case read level :: Int of
   1 -> \s -> (cfas s :: IO (S.AI 1)) >> return ()
@@ -112,6 +112,7 @@ partial :: (VM.CEMState -> IO ()) -> String -> IO ()
 partial f s = do ((c,e), h, s) <- VM.traceCEM f . (\e->((e,0),(0,M.empty),[])) $ VM.labeled $ IO.parseProgram s
                  case c of
                    VM.World _ -> exitSuccess
+                   VM.Lit l (Just i) -> exitWith (ExitFailure i)
                    _ -> exitWith (ExitFailure 255)
 
 freevars :: String -> IO ()
