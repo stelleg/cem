@@ -68,7 +68,7 @@ open = \fname.(>>= newPage \nameBuf.(
   >> (putStrBuf pageSize nameBuf fname)
   (sys_open nameBuf 66 0)))
 putPtrBuf = (Y \putPtrBuf.\loc.\s.(s 
-  (>> (mv nil loc) (return (loc + 8)))
+  (>> (mv 0 loc) (return (loc + 8)))
   \h.\t.(>> (mv h loc) (putPtrBuf (loc + 8) t))))
 readPtrBuf = (Y \rstr.\loc.\n.(n <= 0
   (return nil)
@@ -106,7 +106,9 @@ interact = \f.(>>= getContents (∘ putStr f))
 #getEnv = [tail (map (flip readStrBuf 1024)) (readPtrBuf envp 1024)]
 
 # Prelude-like utilities that require IO, e.g. partial functions
+fork = \c.(>>= sys_fork \n.(n = 0 (>> c (sys_exit 0)) (sys_wait n)))
 error = \s.(>> (putStrLn s) (sys_exit 1))
+undefined = (error "undefined")
 PME = (error "Pattern match error")
 head = \l.(l (error "head of empty list") \h.\t.h)
 index = \n.\k.(Y \index.\n.\k.\cont.(n = 0
@@ -126,15 +128,15 @@ sprintf_ = \k.(Y \printf.\acc.\l.(l (k acc) \h.\t.(h = '%'
   (printf (append acc (cons h nil)) t))) nil)
 sprintf = (sprintf_ id)
 printf = (sprintf_ print)
-putWords = (Y \putWords.\ws.\loc.(ws
-  (pair loc nil)
-  \w.\ws.(putStrBuf 1024 loc w
-    \loc'.\str.(putWords ws loc' \loc''.\ws.(pair loc'' (cons loc ws))))))
-exec = \fname.\argv.
+putWords = (Y \putWords.\ws.\startloc.(ws
+  (return (pair startloc nil))
+  \w.\ws.
+    (>>= (putStrBuf pageSize startloc (++ w (: 0 ;))) \p.(p \endloc.\str.
+    (>>= (putWords ws endloc) \p.(p \ptrloc.\ws.
+    (return (pair ptrloc (cons startloc ws)))))))))
+exec = \str.(words str (return 0) \fname.\argv.
   (>>= newPage \buf.
   (>>= (putStrBuf pageSize buf fname) \p.(p \l.\str.
   (>>= (putWords argv l) \p.(p \al.\alocs.
   (>>= (putPtrBuf al (cons buf alocs)) \l.
-  (>>= (putWords argv l) \p.(p \el.\elocs.
-  (>>= (putPtrBuf el (cons buf elocs)) \l.
-  (sys_execve buf al el))))))))))
+  (sys_execve buf al al))))))))

@@ -1,4 +1,4 @@
 Y = \g.(\x.[g x x] \x.[g x x])
-length = \l.((Y \length.\l.\acc.(l acc \h.\t.[[acc 1 +] length t])) l 0)
+length = \l.((Y \length.\l.\acc.(l acc \h.\t.[[acc 1 \a.\b._+] length t])) l 0)
 
-(length "Hello world")
+main = \w.\c.(length "Hello world")

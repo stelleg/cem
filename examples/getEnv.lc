@@ -1,1 +1,2 @@
+getEnv = (words "var=val othervar=otherval")
 main = (mapm print getEnv)

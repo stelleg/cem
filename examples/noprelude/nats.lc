@@ -1,7 +1,7 @@
-Y=\g.(\x.[g x x] \y.[g y y])
+Y = \g.(\x.[g x x] \y.[g y y])
 cons = \h.\t.\n.\c.(c h t)
 nil = \n.\c.n
-nats = (Y \nats.\n.(cons n [nats n 1 +]))
+nats = (Y \nats.\n.(cons n [nats n 1 \a.\b._+]))
 
 main = (nats 0)
 

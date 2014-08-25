@@ -5,7 +5,7 @@ rev = \xs.(xs (error "empty rev") \x.\xs.(splitAt [x 1 -] xs
   \a.\b.(append (reverse a) (cons x b))))
 flop = (Y \flop.\xs.(xs (error "empty flop") \h.\t.([h 1 =] 0 [(flop (rev xs)) 1 +])))
 fannuch = \xs.(foldl max 0 (map flop xs))
-n = [readInt head getArgs]
+n = 10
 ps = [perms (range 1) n]
 
 main = [

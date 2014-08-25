@@ -3,4 +3,5 @@ tak = (Y \tak.\x.\y.\z.(not [y x <] z
          (tak [y 1 -] z x)
          (tak [z 1 -] x y))))
 
-main = [putStrLn showInt (applyFromList tak) (map readInt) (take 3) getArgs]
+main = (>>= getContents \in.
+       [putStrLn showInt (apply tak) (map readInt) (take 3) words in])
