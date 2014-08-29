@@ -9,5 +9,5 @@ f = (Y \f.{odd = (fst f) even = (snd f)}
 odd = (fst f) even = (snd f)
 
 main = (>> (putStr "Enter number: ")
-       (>>= getLine \i.
-       [(printf "%s is odd: %b" i) showBool odd readInt i]))
+       (>>= getLine \i.{i = (readInt i)}
+       [(printf "%d is odd: %b" i) odd i]))

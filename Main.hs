@@ -17,6 +17,8 @@ import qualified AI
 import qualified ZFA as ZFA
 import qualified State as S
 import qualified Data.Set  as Set
+import qualified DBUtils as DBU
+
 libs = mapM getDataFileName ["lib/prelude.lc", "lib/os.lc", "lib/church.lc"]
 
 parseArgs :: [String] -> IO ()
@@ -121,7 +123,17 @@ freevars s = print $ A.fv $ VM.labeled $ IO.parseProgram s
 compile :: String -> String -> IO ()
 compile filename s = do
   writeFile "/tmp/prog.lc" s
-  native filename (toDeBruijn e) e where e = IO.parseProgram s
+  nodebug filename (DBU.inline $ DBU.deadCodeElim $ toDeBruijn $ IO.parseProgram s)
+
+nodebug :: String -> DBExpr -> IO ()
+nodebug filename dbprog = do
+  let assembly = unlines . (flip IO.toMacros $ repeat "") . IO.compile $ dbprog
+  macros <- readFile =<< getDataFileName "/native/x64.s"
+  gc <- readFile =<< getDataFileName "/native/gc-x64.s"
+  writeFile "/tmp/prog.s" (macros ++ assembly ++ gc)
+  system $ "as /tmp/prog.s -o /tmp/prog.o; ld /tmp/prog.o -o "++ filename
+  return ()
+
 
 toDeBruijn :: SExpr -> DBExpr
 toDeBruijn expr = either (\v->error$"free var: "++v) id $ deBruijn [] expr 

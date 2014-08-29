@@ -7,6 +7,13 @@ import qualified Data.Set as S
 type DBExpr = Expr () Int
 type SExpr = Expr String String
 
+isval :: Expr a b -> Bool
+isval e = case e of 
+  Lit i -> True
+  Lam _ _ -> True
+  World -> True
+  _ -> False
+
 data Expr a b = Var b 
               | App (Expr a b) (Expr a b) 
               | Lam a (Expr a b)

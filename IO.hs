@@ -12,6 +12,7 @@ import Control.Monad
 import Control.Applicative hiding ((<|>), many)
 import Text.Printf
 import LC
+import DBUtils
 import qualified Data.Set as S
 
 -- OUTPUT
@@ -207,35 +208,6 @@ compile (App m n)  = PUSH (length ms + 1) : ms ++ compile n where ms = compile m
 compile (Lit l)    = [LIT l]
 compile (Op o)     = [OP o]
 compile World      = [WORLD]
-
-bound :: Int -> DBExpr -> Int
-bound i (Lam _ e) = bound (i+1) e
-bound i (Var i') = fromEnum $ i == i'
-bound i (App m n) = bound i m + bound i n
-bound i (Op o) = case o of
-  Add -> fromEnum $ i < 2 
-  Sub -> fromEnum $ i < 2 
-  Div -> fromEnum $ i < 2 
-  Mul -> fromEnum $ i < 2 
-  Mod -> fromEnum $ i < 2 
-  Eq -> fromEnum $ i < 4
-  Neq -> fromEnum $ i < 4
-  Lt -> fromEnum $ i < 4
-  Gt -> fromEnum $ i < 4
-  Le -> fromEnum $ i < 4
-  Ge -> fromEnum $ i < 4
-  Write w -> fromEnum $ i < 3
-  Read w -> fromEnum $ i < 2
-  Syscall n -> fromEnum $ i < n + 2
-bound i _ = 0
-
-dec :: Int -> DBExpr -> DBExpr
-dec i (Lam _ e) = Lam () (dec (i+1) e)
-dec i (Var i') | i' == i = error "POP opt failed"
-               | i' > i = Var (i'-1)
-               | i' < i = Var i'
-dec i (App m n) = App (dec i m) (dec i n)
-dec i t = t
 
 debugging :: SExpr -> [String]
 debugging (Lam v e)  = v:debugging e

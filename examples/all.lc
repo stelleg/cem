@@ -1,1 +1,1 @@
-main = [print showBool (all \c.[c 'a' =]) "aaaab"]
+main = (printf "%b" (all (= 'a') "aaaab"))

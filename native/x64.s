@@ -8,9 +8,9 @@
 
 .macro THUNK ind
 entered_\ind:
-  cmp $0, %r12
+  cmp $0, %rcx
   je \ind
-  push %r12
+  push %rcx
   push $0
   jmp \ind
 .endm
@@ -45,12 +45,12 @@ noupdate_\ind:
   jne apply_\ind
   call gc
 apply_\ind:
-  movq (%rbx), %r13
+  movq (%rbx), %rcx
   pop (%rbx)
   pop 8(%rbx)
   movq %rax, 16(%rbx)
   movq %rbx, %rax
-  movq %r13, %rbx
+  movq %rcx, %rbx
 .endm
 
 # Moves a value into env and enters the code for lit
@@ -61,20 +61,20 @@ entered_\ind:
   LIT const_\ind
 .endm
 
-# Sets %r12 to entered location, and thunks push an update to said location
+# Sets %rcx to entered location, and thunks push an update to said location
 .macro VAR ind var
 \ind:
-  mov $\var, %r12
+  mov $\var, %rcx
 enter_\ind:
-  cmp $0, %r12
+  cmp $0, %rcx
   je enter_end_\ind
   movq 16(%rax), %rax 
-  dec %r12
+  dec %rcx
   jmp enter_\ind
 enter_end_\ind:
-  movq %rax, %r12
+  movq %rax, %rcx
   movq 8(%rax), %rax
-  jmp *(%r12)
+  jmp *(%rcx)
 THUNK \ind
 .endm
 
@@ -82,19 +82,19 @@ THUNK \ind
 .macro TAIL_VAR ind var
 entered_\ind:
 \ind:
-  mov $\var, %r12
+  mov $\var, %rcx
 enter_\ind:
-  cmp $0, %r12
+  cmp $0, %rcx
   je enter_end_\ind
   movq 16(%rax), %rax 
-  dec %r12
+  dec %rcx
   jmp enter_\ind
 enter_end_\ind:
   movq (%rax), %r13
   movq %rbx, (%rax) # frees the heap
   movq %rax, %rbx
   movq 8(%rax), %rax
-  movq $0, %r12
+  movq $0, %rcx
   jmp *%r13
 .endm
 
@@ -110,9 +110,9 @@ enter_end_\ind:
 update_\ind:
   cmpq $0, (%rsp)
   jne apply_\ind
-  movq 8(%rsp), %r12
-  movq $\ind, (%r12)
-  movq %rax, 8(%r12)
+  movq 8(%rsp), %rcx
+  movq $\ind, (%rcx)
+  movq %rax, 8(%rcx)
   add $16, %rsp
   jmp \ind # TODO: remove if collapsed markers
 apply_\ind:
@@ -127,7 +127,7 @@ entered_\ind:
   pop %r13
   push %rax
   push $entered_\ind 
-  mov $0, %r12
+  mov $0, %rcx
   mov %r13, %rax
   jmp *%r11
 .endm
@@ -141,7 +141,7 @@ entered_\ind:
   pop %r13
   push %rax
   push $entered_\ind
-  movq $0, %r12
+  movq $0, %rcx
   movq %r13, %rax
   jmp *%r11
 .endm
@@ -220,8 +220,8 @@ entered_\ind:
   BINOP \ind
   LOADVAR %r9 %r10
   LOADVAR %r11 %r13
+  movq $0, %rcx
   cmp %rsi, %rdi
-  movq $0, %r12
   \cmp true_\ind
   movq %r10, %rax
   jmp *%r9
@@ -283,6 +283,7 @@ entered_\ind:
   push $world_\ind
   push %rdi
   push $lit_\ind
+  movq $0, %rcx
   jmp *%r9
   WORLD world_\ind
   LIT lit_\ind
@@ -327,6 +328,7 @@ _start:
   movq %rsp, %rbp
 # Push the argc and argv onto the stack
   movq $0, %rax # set initial environment to null
+  movq $0, %rcx # set initial environment to null
   
 #  addq $24, %rbp
 #  pushq %rbp

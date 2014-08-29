@@ -3,5 +3,5 @@ thefilter = \l.(filter [divs head l] (tail l))
 primes = [(map head) (iterate thefilter) from 2]
 
 main = (>> (putStr "Enter # primes: ")
-       (>>= getLine \n.
+       (>>= (return "1500") \n.
        (for (take (readInt n) primes) (∘ print showInt))))

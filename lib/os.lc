@@ -67,6 +67,9 @@ putStrBuf = \size.\buf.{
 open = \fname.(>>= newPage \nameBuf.(
   >> (putStrBuf pageSize nameBuf fname)
   (sys_open nameBuf 66 0)))
+openrd = \fname.(>>= newPage \nameBuf.(
+  >> (putStrBuf pageSize nameBuf fname)
+  (sys_open nameBuf 0 0)))
 putPtrBuf = (Y \putPtrBuf.\loc.\s.(s 
   (>> (mv 0 loc) (return (loc + 8)))
   \h.\t.(>> (mv h loc) (putPtrBuf (loc + 8) t))))
@@ -92,8 +95,8 @@ readFd = \fd.(>>= newPage \iobuf.(Y \readFd.
     (nil? s
       (return nil)
       (>>= readFd (∘ return (append s)))))))))
-readFile = \fname.(>>= (open fname) \fd.
-  (fd > 1024 
+readFile = \fname.(>>= (openrd fname) \fd.
+  (or (fd > 1024) (fd < 0)
     (sys_exit (-' 1))
     (readFd fd)))
 putStr = (writeFd 1)

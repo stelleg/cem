@@ -15,5 +15,5 @@ toDigits = (Y \toDigits.\l.(l (error "Pattern match")
 e = (toDigits eContFrac)
 
 main = (>> (putStr "Enter number of digits: ")
-       (>>= getLine \i.
+       (>>= (return "1000") \i.
        (print (take (readInt i) (concatMap showInt e)))))

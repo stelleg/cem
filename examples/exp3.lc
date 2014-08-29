@@ -8,5 +8,5 @@ mul = (Y \mul.\x.\y.(y Z \y.(add (mul x y) x)))
 pow = (Y \pow.\x.\y.(y (S Z) \y.(mul x (pow x y))))
 
 main = (>> (putStr "enter exponent: ")
-       (>>= getLine \e.
+       (>>= (return "8") \e.
        [print showInt int (pow 3) nat readInt e]))

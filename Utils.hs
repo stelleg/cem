@@ -1,6 +1,7 @@
 module Utils where
 import VM
 import Data.Set
+import qualified LC
 
 fvs :: LExpr -> Set String
 fvs e = case e of
