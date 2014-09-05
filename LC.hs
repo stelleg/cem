@@ -15,6 +15,7 @@ isval e = case e of
   _ -> False
 
 data Expr a b = Var b 
+              | Tail b
               | App (Expr a b) (Expr a b) 
               | Lam a (Expr a b)
               | Lit Literal

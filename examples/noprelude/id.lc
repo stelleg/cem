@@ -1,4 +1,4 @@
 id = \x.x
 a = (id \y.y)
-b = (id \z.z)
+b = (id 1)
 main = \w.\p.(a b)

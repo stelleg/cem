@@ -51,9 +51,8 @@ write-utf8-char-to-buf = \c.\p.[
   (>> (mvb '?' p) (return 1))]
 readStrBuf = (Y \rstr.\loc.\n.(n = 0
   (return nil)
-  (>>= (read-utf8-char-from-buf loc) \p.(p \c.\n'.(c = 0 
-    (return ;)
-    (>>= (rstr (loc + n') (n - n')) \s.(return (: c s))))))))
+  (>>= (read-utf8-char-from-buf loc) \p.(p \c.\n'.
+  (>>= (rstr (loc + n') (n - n')) \s.(return (: c s)))))))
 putStrBuf = \size.\buf.{
   putStrBuf = (Y \putStrBuf.\loc.\s.
   {finished = (return (pair loc s))}
@@ -105,12 +104,11 @@ print = putStrLn
 getContents = (readFd 0)
 getLine = (>>= getContents \s.(return (takeWhile (!= '\n') s)))
 interact = \f.(>>= getContents (∘ putStr f))
-#getArgs = [tail (map (flip readStrBuf 1024)) (readPtrBuf argv argc)]
 #getEnv = [tail (map (flip readStrBuf 1024)) (readPtrBuf envp 1024)]
 
 # Prelude-like utilities that require IO, e.g. partial functions
 fork = \c.(>>= sys_fork \n.(n = 0 (>> c (sys_exit 0)) (sys_wait n)))
-error = \s.(>> (putStrLn s) (sys_exit 1))
+error = \s.(>> (putStrLn s) (sys_exit 1) Ω)
 undefined = (error "undefined")
 PME = (error "Pattern match error")
 head = \l.(l (error "head of empty list") \h.\t.h)
@@ -143,3 +141,6 @@ exec = \str.(words str (return 0) \fname.\argv.
   (>>= (putWords argv l) \p.(p \al.\alocs.
   (>>= (putPtrBuf al (cons buf alocs)) \l.
   (sys_execve buf al al))))))))
+
+getArgs = (>>= sys_getpid \i.{fname = (sprintf "/proc/%d/cmdline" i)}
+ (>>= (readFile fname) \s.[return tail [splitWhen = 0] s]))

@@ -9,9 +9,22 @@ deadCodeElim e = case e of
   Lam _ b -> Lam () $ deadCodeElim b
   e -> e
 
+tailvars :: DBExpr -> DBExpr
+tailvars e = case e of
+  Lam () e | length (filter (== 0) $ fv e) == 1 -> Lam () $ tailvars $ noescape 0 e 
+  App m n -> App (tailvars m) (tailvars n)
+  e -> e
+
+noescape :: Int -> DBExpr -> DBExpr
+noescape i e = case e of
+  Lam () e -> Lam () $ noescape (i+1) e 
+  App m n | not $ elem i $ fv n -> App (noescape i m) n
+  Var i' | i == i' -> Tail i'
+  e -> e
+
 inline :: DBExpr -> DBExpr
 inline e = case e of 
-  App n@(Lam _ b) m | isval m && null (fv m) -> dec 0 $ replace 0 (inline m) (inline $ b)
+  App n@(Lam _ b) m | isval m && null (fv m) -> dec 0 $ replace 0 (inline m) (inline b)
   App n m -> App (inline n) (inline m)
   Lam _ b -> Lam () $ inline b
   e -> e
@@ -26,6 +39,7 @@ replace i m e = case e of
 fv :: DBExpr -> [Int]
 fv (Lam _ e) = map (flip (-) 1) $ filter (/= 0) $ fv e
 fv (Var i) = [i]
+fv (Tail i) = [i]
 fv (App m n) = fv m ++ fv n
 fv (Op o) = case o of
   Add -> [0,1]
@@ -47,6 +61,7 @@ fv _ = []
 bound :: Int -> DBExpr -> Int
 bound i (Lam _ e) = bound (i+1) e
 bound i (Var i') = fromEnum $ i == i'
+bound i (Tail i') = fromEnum $ i == i'
 bound i (App m n) = bound i m + bound i n
 bound i (Op o) = case o of
   Add -> fromEnum $ i < 2 
@@ -70,5 +85,8 @@ dec i (Lam _ e) = Lam () (dec (i+1) e)
 dec i (Var i') | i' == i = error "POP opt failed"
                | i' > i = Var (i'-1)
                | i' < i = Var i'
+dec i (Tail i')  | i' == i = error "POP opt failed"
+                 | i' > i = Tail (i'-1)
+                 | i' < i = Tail i'
 dec i (App m n) = App (dec i m) (dec i n)
 dec i t = t

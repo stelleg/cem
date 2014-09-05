@@ -1,6 +1,3 @@
-fib = (Y \fib.\n.(n <= 2 1 (fib (n - 1) + (fib (n - 2)))))
+fib = (Y \fib.\n.(n <= 2 1 (+ (fib (- n 1)) (fib (- n 2)))))
 
-getNum = (>> (putStr "Enter fib number: ")
-         (>>= getLine (∘ return readInt)))
-
-main = (>>= getNum \r.[print showInt fib r])
+main = (>>= getArgs \args.[print showInt fib readInt head args])

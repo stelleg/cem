@@ -1,2 +1,3 @@
-getEnv = (words "var=val othervar=otherval")
-main = (mapm print getEnv)
+main = (>>= sys_getpid \i.{fname = (sprintf "/proc/%d/environ" i)}
+       (>> (printf "Opening environment file: %s" fname)
+       (>>= (readFile fname) print)))

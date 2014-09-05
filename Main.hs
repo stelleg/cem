@@ -1,5 +1,5 @@
 {-# LANGUAGE DataKinds #-}
-
+import Text.Printf (printf)
 import System.Environment as SE
 import qualified Utils as U
 import System.Process (system)
@@ -123,15 +123,15 @@ freevars s = print $ A.fv $ VM.labeled $ IO.parseProgram s
 compile :: String -> String -> IO ()
 compile filename s = do
   writeFile "/tmp/prog.lc" s
-  nodebug filename (DBU.inline $ DBU.deadCodeElim $ toDeBruijn $ IO.parseProgram s)
+  nodebug filename (DBU.tailvars $ DBU.inline $ DBU.deadCodeElim $ toDeBruijn $ IO.parseProgram s)
 
 nodebug :: String -> DBExpr -> IO ()
 nodebug filename dbprog = do
   let assembly = unlines . (flip IO.toMacros $ repeat "") . IO.compile $ dbprog
   macros <- readFile =<< getDataFileName "/native/x64.s"
   gc <- readFile =<< getDataFileName "/native/gc-x64.s"
-  writeFile "/tmp/prog.s" (macros ++ assembly ++ gc)
-  system $ "as /tmp/prog.s -o /tmp/prog.o; ld /tmp/prog.o -o "++ filename
+  writeFile (printf "/tmp/%s.s" filename) (macros ++ assembly ++ gc)
+  system $ printf "as /tmp/%s.s -o /tmp/%s.o; ld /tmp/%s.o -o %s" filename filename filename filename
   return ()
 
 

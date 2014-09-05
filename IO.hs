@@ -163,6 +163,7 @@ toMacro :: Int -> Instr -> String -> String
 toMacro n i s = case i of 
   PUSH m -> printf "APP L%d entered_L%d" n (m+n)
   ENTER i -> printf "VAR L%d %d # %s" n i s
+  TAIL i -> printf "TAIL_VAR L%d %d # %s" n i s
   TAKE -> printf "LAM L%d # %s" n s
   POP -> printf "UNUSED_LAM L%d # %s" n s
   LIT i -> printf "CONST L%d %d" n i
@@ -202,12 +203,19 @@ syscallregs = ["%rdi", "%rsi", "%rdx", "%r10", "%r8", "%r9"]
 
 compile :: DBExpr -> [Instr]
 compile (Lam _ e) | bound 0 e == 0 = POP : compile (dec 0 e)
-compile (Lam _ e)  = TAKE : compile e
-compile (Var i)    = [ENTER i]
-compile (App m n)  = PUSH (length ms + 1) : ms ++ compile n where ms = compile m
-compile (Lit l)    = [LIT l]
-compile (Op o)     = [OP o]
-compile World      = [WORLD]
+compile (Lam _ e) = TAKE : compile e 
+compile (Var i)   = [ENTER i]
+compile (Tail i)  = [TAIL i]
+compile (App m n) = PUSH (length ms + 1) : ms ++ compile n where ms = compile m 
+compile (Lit l)   = [LIT l]
+compile (Op o)    = [OP o]
+compile World     = [WORLD]
+
+tailvar :: Int -> DBExpr -> DBExpr
+tailvar i (Var i') | i == i' = Tail i
+tailvar i (Lam _ e) = Lam () $ tailvar (i+1) e
+tailvar i (App m n) = App (tailvar i m) (tailvar i n)
+tailvar i e = e
 
 debugging :: SExpr -> [String]
 debugging (Lam v e)  = v:debugging e

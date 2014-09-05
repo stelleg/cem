@@ -1,4 +1,3 @@
-main = #(>>= getLine \l.{power = [church readInt head l]}
-  {power = (church 9)}
+main = (>>= getArgs \args.{power = [church readInt head args]}
   [putStrLn showInt unchurch 
-    (sub (pow (church 3) power) (pow (church 3) power))]#)
+    (sub (pow (church 3) power) (pow (church 3) power))])

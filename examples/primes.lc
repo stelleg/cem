@@ -2,6 +2,5 @@ divs = \n.\x.(x % n != 0)
 thefilter = \l.(filter [divs head l] (tail l))
 primes = [(map head) (iterate thefilter) from 2]
 
-main = (>> (putStr "Enter # primes: ")
-       (>>= (return "1500") \n.
-       (for (take (readInt n) primes) (∘ print showInt))))
+main = (>>= getArgs \args.(args (error "usage: primes <n>") \n.\t.
+       (printf "%d" (!! (readInt n) primes))))

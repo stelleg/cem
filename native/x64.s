@@ -152,16 +152,16 @@ entered_\ind:
 # general use case) will be solving for this before compilation to native code.
 # We also free the heap space on loadvar.
 .macro LOADVARENV reg
-#  movq %rbx, (%rax)
-#  movq %rax, %rbx
+  movq %rbx, (%rax)
+  movq %rax, %rbx
   movq 8(%rax), \reg
   movq 16(%rax), %rax 
 .endm 
 
 .macro LOADVAR reg1 reg2
   movq (%rax), \reg1
-#  movq %rbx, (%rax)
-#  movq %rax, %rbx
+  movq %rbx, (%rax)
+  movq %rax, %rbx
   movq 8(%rax), \reg2
   movq 16(%rax), %rax 
 .endm 

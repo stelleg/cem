@@ -1,4 +1,5 @@
 .PHONY: all
+
 all: $(patsubst %.lc, %, $(wildcard *.lc))
 
 %: %.lc
