@@ -123,7 +123,7 @@ freevars s = print $ A.fv $ VM.labeled $ IO.parseProgram s
 compile :: String -> String -> IO ()
 compile filename s = do
   writeFile "/tmp/prog.lc" s
-  nodebug filename (DBU.tailvars $ DBU.inline $ DBU.deadCodeElim $ toDeBruijn $ IO.parseProgram s)
+  nodebug filename (DBU.inline $ DBU.deadCodeElim $ toDeBruijn $ IO.parseProgram s)
 
 nodebug :: String -> DBExpr -> IO ()
 nodebug filename dbprog = do

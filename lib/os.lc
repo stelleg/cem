@@ -82,7 +82,7 @@ writeFd = \fd.\str.(>>= newPage \iobuf.(>> (Y \writeFd.\str.
   (>>= (sys_write fd iobuf (p - iobuf)) \n.
   (nil? s (return n) (writeFd s))))
 ) str) (free iobuf)))
-writeFile = \fname.\str.(newPage 0 >>= \iobuf.(
+writeFile = \fname.\str.(newPage >>= \iobuf.(
   >>= (open fname) \fd.(
   >> (fd > 1024 (sys_exit 2) (writeFd fd str))
   (free iobuf))))
