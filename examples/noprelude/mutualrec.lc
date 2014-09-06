@@ -9,4 +9,4 @@ f = (Y \f.(\odd.\even.\p.(p
 odd = (f fst)
 even = (f snd)
 
-main = \w.\p.(odd 6 0 1)
+main = \w.\p.(odd 6 1 2)

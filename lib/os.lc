@@ -104,7 +104,7 @@ print = putStrLn
 getContents = (readFd 0)
 getLine = (>>= getContents \s.(return (takeWhile (!= '\n') s)))
 interact = \f.(>>= getContents (∘ putStr f))
-#getEnv = [tail (map (flip readStrBuf 1024)) (readPtrBuf envp 1024)]
+
 
 # Prelude-like utilities that require IO, e.g. partial functions
 fork = \c.(>>= sys_fork \n.(n = 0 (>> c (sys_exit 0)) (sys_wait n)))
@@ -143,4 +143,8 @@ exec = \str.(words str (return 0) \fname.\argv.
   (sys_execve buf al al))))))))
 
 getArgs = (>>= sys_getpid \i.{fname = (sprintf "/proc/%d/cmdline" i)}
- (>>= (readFile fname) \s.[return tail [splitWhen = 0] s]))
+  (>>= (readFile fname) \s.[return tail [splitWhen = 0] s]))
+
+getEnv = (>>= sys_getpid \i.{fname = (sprintf "/proc/%d/environ" i)}
+  (>>= (readFile fname) \s.{bindings = (splitWhen (= 0) s)}
+  (return (map (split (= '=')) bindings))))

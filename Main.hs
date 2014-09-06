@@ -21,37 +21,41 @@ import qualified DBUtils as DBU
 
 libs = mapM getDataFileName ["lib/prelude.lc", "lib/os.lc", "lib/church.lc"]
 
+programify b s = if b then s else "{" ++ s ++ "}" ++ "(main Ω \\v.\\w.w)"
+
 parseArgs :: [String] -> IO ()
 parseArgs [] = usage
-parseArgs (('-':o:opts):sources) = parseOpts (o:opts) sources
-parseArgs sources = parseOpts "lr" sources
+parseArgs (('-':o:opts):sources) = parseOpts False (o:opts) sources
+parseArgs sources = parseOpts False "lr" sources
 
-parseOpts :: String -> [String] -> IO ()
-parseOpts ('l':o) sources = do srclibs <- libs; parseOpts o (srclibs ++ sources)
-parseOpts "v" _ = version
-parseOpts "h" _ = usage
-parseOpts ('a':level) sources = readSources sources >>= case read level :: Int of
-  1 -> \s -> (cfa s :: IO (AI.CFA 1)) >> return ()
-  2 -> \s -> (cfa s :: IO (AI.CFA 2)) >> return ()
-  3 -> \s -> (cfa s :: IO (AI.CFA 3)) >> return ()
-  4 -> \s -> (cfa s :: IO (AI.CFA 4)) >> return ()
-  5 -> \s -> (cfa s :: IO (AI.CFA 5)) >> return ()
-  6 -> \s -> (cfa s :: IO (AI.CFA 6)) >> return ()
-parseOpts "c" sources = compile (chooseOutput . last $ sources) =<< readSources sources
-parseOpts "f" sources = freevars =<< readSources sources
-parseOpts ('k':level) sources = readSources sources >>= cfak (read level)
-parseOpts "g" sources = graph =<< readSources sources
-parseOpts "r" sources = partial (\s->return()) =<< readSources sources 
-parseOpts "t" sources = partial (\((c,e),h,s)->putStrLn $ take 30 $ show c) =<< readSources sources
-parseOpts ('z':level) sources = cfaz (read level) =<< readSources sources
-parseOpts ('s':level) sources = readSources sources >>= case read level :: Int of
+parseOpts :: Bool -> String -> [String] -> IO ()
+parseOpts pure ('p':o) sources = parseOpts True o sources
+parseOpts pure ('l':o) sources = do srclibs <- libs; parseOpts pure o (srclibs ++ sources)
+parseOpts pure "v" _ = version
+parseOpts pure "h" _ = usage
+parseOpts pure ('a':level) sources = readSources sources >>= \s' -> let s = programify pure s' in 
+  case read level :: Int of
+    1 -> (cfa s :: IO (AI.CFA 1)) >> return ()
+    2 -> (cfa s :: IO (AI.CFA 2)) >> return ()
+    3 -> (cfa s :: IO (AI.CFA 3)) >> return ()
+    4 -> (cfa s :: IO (AI.CFA 4)) >> return ()
+    5 -> (cfa s :: IO (AI.CFA 5)) >> return ()
+    6 -> (cfa s :: IO (AI.CFA 6)) >> return ()
+parseOpts pure "c" sources = compile (chooseOutput . last $ sources) . programify pure =<< readSources sources
+parseOpts pure "f" sources = freevars . programify pure =<< readSources sources
+parseOpts pure ('k':level) sources = readSources sources >>= cfak (read level) . programify pure
+parseOpts pure "g" sources = graph . programify pure =<< readSources sources
+parseOpts pure "r" sources = partial (\s->return()) . programify pure =<< readSources sources 
+parseOpts pure "t" sources = partial (\((c,e),h,s)->putStrLn $ take 30 $ show c) . programify pure =<< readSources sources
+parseOpts pure ('z':level) sources = cfaz (read level) . programify pure =<< readSources sources
+parseOpts pure ('s':level) sources = readSources sources >>= case read level :: Int of
   1 -> \s -> (cfas s :: IO (S.AI 1)) >> return ()
   2 -> \s -> (cfas s :: IO (S.AI 2)) >> return ()
   3 -> \s -> (cfas s :: IO (S.AI 3)) >> return ()
   4 -> \s -> (cfas s :: IO (S.AI 4)) >> return ()
   5 -> \s -> (cfas s :: IO (S.AI 5)) >> return ()
   6 -> \s -> (cfas s :: IO (S.AI 6)) >> return ()
-parseOpts _ _ = usage
+parseOpts _ _ _ = usage
 
 chooseOutput "-" = "a.out"
 chooseOutput ('=':prog) = "a.out"
@@ -91,8 +95,6 @@ cfak i s = do
   putStrLn $ A.ppca cfa
   putStrLn "Summarization"
   putStrLn $ A.ppta $ A.summarize cfa
-  putStrLn "Sizes"
-  mapM_ print $ A.sizes cfa
 
 cfa s = do
   let prog = VM.labeled $ IO.parseProgram s

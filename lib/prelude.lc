@@ -56,7 +56,6 @@ odd = \n.(n % 2 = 1)
 id = \x.x
 const = true
 compose = \f.\g.\x.[f g x]
-apply = \f.\x.(f x)
 flip = \f.\b.\a.(f a b)
 until = (Y \until.\p.\f.\x.(p x x (until p f (f x)))) 
 map = (Y \map.\f.\xs.(xs nil \h.\t.(cons (f h) (map f t))))
@@ -131,7 +130,13 @@ zipWith = \f.(Y \zipWith.\as.\bs.(as nil \a.\at.(bs nil \b.\bt.
 zip = (zipWith pair)
 for = \as.\f.(Y \for.\as.(as (return id) \a.\as.(>> (f a) (for as))) as)
 mapm = (flip for)
-strcmp = \s.\s'.(all id (zipWith = s s'))
+replace = \l.\v.(map (const v) l)
+zip-with-default = \f.\d.(Y \zwd.\as.\bs.(as 
+  (replace bs d)
+  \a.\at.(bs 
+    (replace as d)
+    \b.\bt.(: (f a b) (zwd at bt)))))
+strcmp = \s1.\s2.(all id (zip-with-default = false s1 s2))
 lookup = \elem.\eqfun.(Y \lookup.\l.(l 
   Nothing 
   \h.\t.(h \key.\value.(eqfun elem key

@@ -81,7 +81,7 @@ pa <^ pb  = pa <* (notCode >> pb)
 infixl 4 <^>, <^, ^>
 
 parseProgram :: String -> SExpr 
-parseProgram s = parseSource lc $ "{" ++ s ++ "}" ++ "(main Ω \\v.\\w.w)"
+parseProgram s = parseSource lc s 
 
 parseSource :: Parser SExpr -> String -> SExpr
 parseSource p src = either (error.show) id . parse p "" $ src
