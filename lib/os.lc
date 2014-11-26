@@ -11,19 +11,19 @@ mv = mvq
 rd = rdq
 
 ## System calls ##
-sys_mmap = \addr.\len.\prot.\flags.\fd.\offset.\w.[w offset fd flags prot len addr \a.\b.\c.\d.\e.\f.(\t.\w._!6 9)]
-sys_write = \fd.\buf.\count.\w.[w count buf fd \a.\b.\c.(\t.\w._!3 1)]
-sys_read = \fd.\buf.\count.\w.[w count buf fd \a.\b.\c.(\t.\w._!3 0)]
-sys_open = \fname.\flags.\mode.\w.[w mode flags fname \a.\b.\c.(\t.\w._!3 2)]
-sys_close = \fd.\w.[w fd \a.(\t.\w._!1 3)]
-sys_exit = \code.\w.[w code \a.(\t.\w._!1 60)]
-sys_socket = \dom.\type.\prot.\w.[w prot type dom \a.\b.\c.(\t.\w._!3 41)]
-sys_getpid = \w.[w (\t.\w._!0 39)]
-sys_fork = \world.[world (\t.\w._!0 57)]
-sys_nanosleep = \rqtp.\rmtp.\w.[w rmtp rqtp \a.\b.(\t.\w._!2 35)]
-sys_munmap = \addr.\len.\w.[w len addr \a.\b.(\t.\w._!2 11)]
-sys_wait = \pid.\w.[w pid (\pid.\a.\b.\t.\w._!3 0 0 61)]
-sys_execve = \fname.\argv.\envp.\w.[w envp argv fname \a.\b.\c.(\w.\t._!3 59)]
+sys_mmap = \addr.\len.\prot.\flags.\fd.\offset.\w.[w 9 offset fd flags prot len addr \a.\b.\c.\d.\e.\f.\t.\w._!6]
+sys_write = \fd.\buf.\count.\w.[w 1 count buf fd \a.\b.\c.\t.\w._!3]
+sys_read = \fd.\buf.\count.\w.[w 0 count buf fd \a.\b.\c.\t.\w._!3]
+sys_open = \fname.\flags.\mode.\w.[w 2 mode flags fname \a.\b.\c.\t.\w._!3]
+sys_close = \fd.\w.[w 3 fd \a.\t.\w._!1]
+sys_exit = \code.\w.[w 60 code\a.\t.\w._!1]
+sys_socket = \dom.\type.\prot.\w.[w 41 prot type dom \a.\b.\c.\t.\w._!3]
+sys_getpid = \w.[w 39 \t.\w._!0]
+sys_fork = \world.[world 57 \t.\w._!0]
+sys_nanosleep = \rqtp.\rmtp.\w.[w 35 rmtp rqtp \a.\b.\t.\w._!2]
+sys_munmap = \addr.\len.\w.[w 11 len addr \a.\b.\t.\w._!2]
+sys_wait = \pid.\w.[w 61 0 0 pid \pid.\a.\b.\t.\w._!3]
+sys_execve = \fname.\argv.\envp.\w.[w 59 envp argv fname \a.\b.\c.\w.\t._!3]
 
 ## Basic IO ##
 pageSize = 4096
@@ -51,9 +51,8 @@ write-utf8-char-to-buf = \c.\p.[
   (>> (mvb '?' p) (return 1))]
 readStrBuf = (Y \rstr.\loc.\n.(n = 0
   (return nil)
-  (>>= (read-utf8-char-from-buf loc) \p.(p \c.\n'.(c = 0 
-    (return ;)
-    (>>= (rstr (loc + n') (n - n')) \s.(return (: c s))))))))
+  (>>= (read-utf8-char-from-buf loc) \p.(p \c.\n'.
+  (>>= (rstr (loc + n') (n - n')) \s.(return (: c s)))))))
 putStrBuf = \size.\buf.{
   putStrBuf = (Y \putStrBuf.\loc.\s.
   {finished = (return (pair loc s))}
@@ -67,8 +66,11 @@ putStrBuf = \size.\buf.{
 open = \fname.(>>= newPage \nameBuf.(
   >> (putStrBuf pageSize nameBuf fname)
   (sys_open nameBuf 66 0)))
+openrd = \fname.(>>= newPage \nameBuf.(
+  >> (putStrBuf pageSize nameBuf fname)
+  (sys_open nameBuf 0 0)))
 putPtrBuf = (Y \putPtrBuf.\loc.\s.(s 
-  (>> (mv nil loc) (return (loc + 8)))
+  (>> (mv 0 loc) (return (loc + 8)))
   \h.\t.(>> (mv h loc) (putPtrBuf (loc + 8) t))))
 readPtrBuf = (Y \rstr.\loc.\n.(n <= 0
   (return nil)
@@ -80,7 +82,7 @@ writeFd = \fd.\str.(>>= newPage \iobuf.(>> (Y \writeFd.\str.
   (>>= (sys_write fd iobuf (p - iobuf)) \n.
   (nil? s (return n) (writeFd s))))
 ) str) (free iobuf)))
-writeFile = \fname.\str.(newPage 0 >>= \iobuf.(
+writeFile = \fname.\str.(newPage >>= \iobuf.(
   >>= (open fname) \fd.(
   >> (fd > 1024 (sys_exit 2) (writeFd fd str))
   (free iobuf))))
@@ -92,8 +94,8 @@ readFd = \fd.(>>= newPage \iobuf.(Y \readFd.
     (nil? s
       (return nil)
       (>>= readFd (∘ return (append s)))))))))
-readFile = \fname.(>>= (open fname) \fd.
-  (fd > 1024 
+readFile = \fname.(>>= (openrd fname) \fd.
+  (or (fd > 1024) (fd < 0)
     (sys_exit (-' 1))
     (readFd fd)))
 putStr = (writeFd 1)
@@ -102,11 +104,12 @@ print = putStrLn
 getContents = (readFd 0)
 getLine = (>>= getContents \s.(return (takeWhile (!= '\n') s)))
 interact = \f.(>>= getContents (∘ putStr f))
-#getArgs = [tail (map (flip readStrBuf 1024)) (readPtrBuf argv argc)]
-#getEnv = [tail (map (flip readStrBuf 1024)) (readPtrBuf envp 1024)]
+
 
 # Prelude-like utilities that require IO, e.g. partial functions
-error = \s.(>> (putStrLn s) (sys_exit 1))
+fork = \c.(>>= sys_fork \n.(n = 0 (>> c (sys_exit 0)) (sys_wait n)))
+error = \s.(>> (putStrLn s) (sys_exit 1) Ω)
+undefined = (error "undefined")
 PME = (error "Pattern match error")
 head = \l.(l (error "head of empty list") \h.\t.h)
 index = \n.\k.(Y \index.\n.\k.\cont.(n = 0
@@ -126,15 +129,22 @@ sprintf_ = \k.(Y \printf.\acc.\l.(l (k acc) \h.\t.(h = '%'
   (printf (append acc (cons h nil)) t))) nil)
 sprintf = (sprintf_ id)
 printf = (sprintf_ print)
-putWords = (Y \putWords.\ws.\loc.(ws
-  (pair loc nil)
-  \w.\ws.(putStrBuf 1024 loc w
-    \loc'.\str.(putWords ws loc' \loc''.\ws.(pair loc'' (cons loc ws))))))
-exec = \fname.\argv.
+putWords = (Y \putWords.\ws.\startloc.(ws
+  (return (pair startloc nil))
+  \w.\ws.
+    (>>= (putStrBuf pageSize startloc (++ w (: 0 ;))) \p.(p \endloc.\str.
+    (>>= (putWords ws endloc) \p.(p \ptrloc.\ws.
+    (return (pair ptrloc (cons startloc ws)))))))))
+exec = \str.(words str (return 0) \fname.\argv.
   (>>= newPage \buf.
   (>>= (putStrBuf pageSize buf fname) \p.(p \l.\str.
   (>>= (putWords argv l) \p.(p \al.\alocs.
   (>>= (putPtrBuf al (cons buf alocs)) \l.
-  (>>= (putWords argv l) \p.(p \el.\elocs.
-  (>>= (putPtrBuf el (cons buf elocs)) \l.
-  (sys_execve buf al el))))))))))
+  (sys_execve buf al al))))))))
+
+getArgs = (>>= sys_getpid \i.{fname = (sprintf "/proc/%d/cmdline" i)}
+  (>>= (readFile fname) \s.[return tail [splitWhen = 0] s]))
+
+getEnv = (>>= sys_getpid \i.{fname = (sprintf "/proc/%d/environ" i)}
+  (>>= (readFile fname) \s.{bindings = (splitWhen (= 0) s)}
+  (return (map (split (= '=')) bindings))))

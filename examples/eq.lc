@@ -2,5 +2,5 @@ showEquality = \x.\y.(printf (x = y "%d = %d" "%d /= %d") x y)
 
 main = (>> (putStr "Enter two numbers: ")
        (>>= getLine \l.
-       [print (applyFromList showEquality) (map readInt) words l]))
+       [(apply showEquality) (map readInt) words l]))
 

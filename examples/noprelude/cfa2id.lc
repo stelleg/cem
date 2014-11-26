@@ -1,0 +1,7 @@
++ = \n.\m.[m n \n.\m._+]
+app = \f.\e.(f e)
+id = \x.x
+n1 = (app id 1)
+n2 = (app id 2)
+sys_exit = \code.\w.[w code \a.(\t.\w._!1 60)]
+main = (sys_exit (+ n1 n2))

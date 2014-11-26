@@ -1,5 +1,5 @@
 # getdents system call
-sys_getdents = \fd.\dirent.\count.\w.[w fd dirent count \c.\d.\f.(\t.\w._!3 78)]
+sys_getdents = \fd.\dirent.\count.\w.[w 78 fd dirent count \c.\d.\f.\t.\w._!3]
 ls = \dirname.
   (>>= newPage \dirents.
   (>>= (open dirname) \fd.
@@ -10,23 +10,15 @@ ls = \dirname.
 sys_pipe = \fdes.\w.[w fdes \f.(\t.\w._!1 22)]
 pipe = (>>= newPage \fdes.
        (>> (sys_pipe fdes) 
-       (>>= rdl fdes \n1.(rdl (fdes + 4)) \n2.(pair n1 n2))))
+       (>>= rdl fdes \n1.
+       (>>= (rdl (fdes + 4)) \n2.
+       (return (pair n1 n2))))))
 
 # Shell takes a line and executes it after splitting it into words
-shell = \line.(words line (return 0) \cmd.\args.
-  (>>= sys_fork \n.(n = 0 
-    (>> (>>= getEnv (exec cmd args)) (sys_exit 0))
-    (sys_wait n))))
-
-# Looks for the command in the PATH environment
-envMap = (map (split (= '=')) getEnv)
-paths = (lookup "PATH" strcmp envMap "path not found!" (splitWhen (= ':')))
-
-# Extracts all possible commands using ls output
-commands = (mapm (∘ shell (append "/usr/bin/ls ")) paths)
+shell = \cmd.(fork (exec cmd))
 
 # Quits on ctrl-d (eof), otherwise returns the line
-getLineOrQuit = (>>= getContents \s.(
+getLineOrQuit = (>>= getLine \s.(
                 (takeWhile (!= '\n') s)
                   (error "goodbye")
                   \h.\t.(return (: h t))))

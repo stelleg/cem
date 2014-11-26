@@ -1,4 +1,4 @@
-(\iszero.
+main = \w.\p.(\iszero.
   (\pred.
     (\sub.
       (\ten.

@@ -1,1 +1,1 @@
-main = (putStrLn (filter (!= 'n') "Hen"))
+main = (print (filter (!= 'n') "Hen"))

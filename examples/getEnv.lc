@@ -1,1 +1,5 @@
-main = (mapm print getEnv)
+main = (>>= getArgs \args.
+       (>>= getEnv \env.
+       (args 
+         (mapm \p.[p printf "%s = %s"] env)
+         \var.\t.(lookup var strcmp env (return 0) print))))

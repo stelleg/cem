@@ -1,21 +1,13 @@
+# Recursion
+Y = \g.(\x.[g x x] \z.[g z z])
+
 # Boolean integer comparisons
-= = \n.\m.\t.\f.[m n \n.\m._=]
-!= = \n.\m.\t.\f.[m n \n.\m._\=]
->= = \n.\m.\t.\f.[m n \n.\m._>=]
-<= = \n.\m.\t.\f.[m n \n.\m._<=]
 < = \n.\m.\t.\f.[m n \n.\m._<]
-> = \n.\m.\t.\f.[m n \n.\m._>]
 
 # Arithmetic
-+ = \n.\m.[m n \n.\m._+]
 - = \n.\m.[m n \n.\m._-]
--' = (0 -)
 * = \n.\m.[m n \n.\m._*]
-/ = \n.\m.[m n \n.\m._/]
-% = \n.\m.[m n \n.\m._%]
 
-Y = \g.(\x.[g x x] \z.[g z z])
-fact = \m.(Y \fact.\n.\acc.(< n 2 acc (fact (- n 1) (* acc n))) m 1)
+fact = (Y \fact.\acc.\n.(< n 2 acc [(- n 1) (* acc n) fact]) 1)
 
-sys_exit = \code.\w.[w code \a.(\t.\w._!1 60)]
-main = (sys_exit (fact 5))
+main = \w.\p.(fact 5)

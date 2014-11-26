@@ -1,11 +1,9 @@
 (\iszero.
   (\pred.
     (\sub.
-      (\five.
-        (\seven.
-          (iszero ((sub (five seven)) (five seven)))
-        \f.\x.(f (f (f (f (f (f (f x))))))))
-      \f.\x.(f (f (f (f (f x))))))
+      (\n.
+        (iszero (sub (n n) (n n)))
+      \f.\x.(f (f x)))
     \m.\n.((n pred) m))
   \n.\f.\x.(((n \g.\h.(h (g f))) \u.x) \u.u))
 \n.((n \z.\x.\y.y) \x.\y.x))

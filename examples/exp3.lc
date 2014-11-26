@@ -1,12 +1,11 @@
 Z = \z.\s.z
 S = \n.\z.\s.(s n)
 
-nat = (Y \nat.\x.(x < 1 Z [S nat (x - 1)]))
-int = (Y \int.\x.(x 0 (∘ (+ 1) int)))
+nat = (Y \nat.\x.(x < 1 Z [S nat (- x 1)]))
+int = (Y \int.\x.(x 0 \i.(+ 1 (int i))))
 add = (Y \add.\x.\y.(x y \x.(S (add x y))))
 mul = (Y \mul.\x.\y.(y Z \y.(add (mul x y) x)))
 pow = (Y \pow.\x.\y.(y (S Z) \y.(mul x (pow x y))))
 
-main = (>> (putStr "enter exponent: ")
-       (>>= getLine \e.
-       [print showInt int (pow 3) nat readInt e]))
+main = (>>= getArgs \args.{e = [readInt head args]}
+       [print showInt int (pow (nat 3)) nat e])

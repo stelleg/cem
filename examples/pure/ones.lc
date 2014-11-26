@@ -1,0 +1,5 @@
+Y = \g.(\x.[g x x] \x.[g x x])
+cons = \h.\t.\p.(p h t)
+ones = (Y \ones.(cons 1 ones))
+
+main = \w.\p.(ones \h.\t.t)

@@ -95,6 +95,7 @@ source-repository head
 
 executable cem
   main-is: Main.hs
+  ghc-options: -O2
   default-extensions: LambdaCase TupleSections
   other-modules: Paths_cem
   build-depends: process,

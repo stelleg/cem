@@ -12,6 +12,7 @@ import Control.Monad
 import Control.Applicative hiding ((<|>), many)
 import Text.Printf
 import LC
+import DBUtils
 import qualified Data.Set as S
 
 -- OUTPUT
@@ -80,7 +81,7 @@ pa <^ pb  = pa <* (notCode >> pb)
 infixl 4 <^>, <^, ^>
 
 parseProgram :: String -> SExpr 
-parseProgram s = parseSource lc $ "{" ++ s ++ "}" ++ "(main Ω \\v.\\w.w)"
+parseProgram s = parseSource lc s 
 
 parseSource :: Parser SExpr -> String -> SExpr
 parseSource p src = either (error.show) id . parse p "" $ src
@@ -152,6 +153,7 @@ data Instr =
   | TAIL Int
   | LIT Literal
   | OP Op
+  | WORLD
   deriving (Show, Eq)
 
 toMacros :: [Instr] -> [String] -> [String]
@@ -161,13 +163,18 @@ toMacro :: Int -> Instr -> String -> String
 toMacro n i s = case i of 
   PUSH m -> printf "APP L%d entered_L%d" n (m+n)
   ENTER i -> printf "VAR L%d %d # %s" n i s
+  TAIL i -> printf "TAIL_VAR L%d %d # %s" n i s
   TAKE -> printf "LAM L%d # %s" n s
   POP -> printf "UNUSED_LAM L%d # %s" n s
   LIT i -> printf "CONST L%d %d" n i
-  OP (Syscall i) -> concat $ [printf "entered_L%d:\n" n] 
-                          ++ [printf "LAM sys_lam_%d_%d\n" n k | k <- [0..i]] 
-                          ++ [printf "LOADVAR %s\n" (syscallregs!!k) | k <- [0..i-1]]
-                          ++ [printf "OP_SYSCALL L%d" n]
+  OP (Syscall i) -> unlines$ [printf "entered_L%d:" n]
+                          ++ ["movq 16(%rax), %rax"] -- World
+                          ++ ["LOADVARENV %rcx"] -- Syscall
+                          ++ [printf "LOADVARENV %s" reg | reg <- reverse $ take i syscallregs] -- Args
+                          ++ ["movq %rcx, %rax"]
+                          ++ ["syscall"]
+                          ++ ["movq %rax, %rdi"]
+                          ++ ["RETURNVAL ret_L" ++ show n]
   OP o -> flip (printf "OP_%s L%d") n $ case o of
     Add -> "ADD"
     Sub -> "SUB"
@@ -180,33 +187,35 @@ toMacro n i s = case i of
     Gt  -> "GT"
     Le  -> "LTE"
     Ge  -> "GTE"
-    Write w -> "WRITE" ++ show w
-    Read w -> "READ" ++ show w
+    Write w -> "WRITE " ++ showreg w
+    Read w -> "READ " ++ showreg w
+  WORLD -> printf "WORLD L%d" n
+
+showreg :: WordSize -> String
+showreg w = case w of
+  Word8 -> "dil"
+  Word16 -> "di"
+  Word32 -> "edi"
+  Word64 -> "rdi"
 
 -- This is x64 specific, need to make cross platform
 syscallregs = ["%rdi", "%rsi", "%rdx", "%r10", "%r8", "%r9"]
 
 compile :: DBExpr -> [Instr]
 compile (Lam _ e) | bound 0 e == 0 = POP : compile (dec 0 e)
-compile (Lam _ e)  = TAKE : compile e
-compile (Var i)    = [ENTER i]
-compile (App m n)  = PUSH (length ms + 1) : ms ++ compile n where ms = compile m
-compile (Lit l)    = [LIT l]
-compile (Op o)     = [OP o]
+compile (Lam _ e) = TAKE : compile e 
+compile (Var i)   = [ENTER i]
+compile (Tail i)  = [TAIL i]
+compile (App m n) = PUSH (length ms + 1) : ms ++ compile n where ms = compile m 
+compile (Lit l)   = [LIT l]
+compile (Op o)    = [OP o]
+compile World     = [WORLD]
 
-bound :: Int -> DBExpr -> Int
-bound i (Lam _ e) = bound (i+1) e
-bound i (Var i') = if i == i' then 1 else 0
-bound i (App m n) = bound i m + bound i n
-bound i _ = 0
-
-dec :: Int -> DBExpr -> DBExpr
-dec i (Lam _ e) = Lam () (dec (i+1) e)
-dec i (Var i') | i' == i = error "POP opt failed"
-               | i' > i = Var (i'-1)
-               | i' < i = Var i'
-dec i (App m n) = App (dec i m) (dec i n)
-dec i t = t
+tailvar :: Int -> DBExpr -> DBExpr
+tailvar i (Var i') | i == i' = Tail i
+tailvar i (Lam _ e) = Lam () $ tailvar (i+1) e
+tailvar i (App m n) = App (tailvar i m) (tailvar i n)
+tailvar i e = e
 
 debugging :: SExpr -> [String]
 debugging (Lam v e)  = v:debugging e
@@ -214,4 +223,4 @@ debugging (Var v)    = [v]
 debugging (App m n)  = "":debugging m ++ debugging n
 debugging (Lit l)    = [""]
 debugging (Op o)     = [""]
-
+debugging World      = [""]

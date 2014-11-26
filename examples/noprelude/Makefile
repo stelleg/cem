@@ -3,7 +3,7 @@
 all: $(patsubst %.lc, %, $(wildcard *.lc))
 
 %: %.lc
-	cem -lc $<
+	cem -c $<
 
 clean:
 	find . -perm +100 -type f -delete

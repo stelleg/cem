@@ -4,23 +4,28 @@
 # rbx = free env 
 # r14 = env start (don't need these pinned)
 # r15 = env end
-# r12, r13 = temporaries
-# We keep the argument registers open to avoid needing to save them for calls
+# rsi, rdi, rcx, rdx, r8-r13 = temporaries
 
+.macro THUNK ind
+entered_\ind:
+  cmp $0, %rcx
+  je \ind
+  push %rcx
+  push $0
+  jmp \ind
+.endm
+
+# Moves 
 .macro APP ind code
 \ind:
   push %rax
   push $\code
   jmp next_\ind
-entered_\ind:
-  cmp $0, %r12
-  je \ind
-  push %r12
-  push $0
-  jmp \ind
+THUNK \ind
 next_\ind:
 .endm
 
+# Pops a closure off the stack
 .macro UNUSED_LAM ind 
 entered_\ind:
 \ind:
@@ -30,6 +35,7 @@ noupdate_\ind:
 next_\ind:
 .endm
 
+# Pops a closure from the stack into the environment
 .macro LAM ind 
 entered_\ind:
 \ind:
@@ -39,62 +45,61 @@ noupdate_\ind:
   jne apply_\ind
   call gc
 apply_\ind:
-  movq (%rbx), %r12
+  movq (%rbx), %rcx
   pop (%rbx)
   pop 8(%rbx)
   movq %rax, 16(%rbx)
   movq %rbx, %rax
-  movq %r12, %rbx
+  movq %rcx, %rbx
 .endm
 
+# Moves a value into env and enters the code for lit
 .macro CONST ind val
 entered_\ind:
 \ind:
   movq $\val, %rax
-  LIT prim_result_\ind
+  LIT const_\ind
 .endm
 
-# Variable sets %r12 to entered location, and thunks push an update to said
-# location
+# Sets %rcx to entered location, and thunks push an update to said location
 .macro VAR ind var
 \ind:
-  mov $\var, %r12
+  mov $\var, %rcx
 enter_\ind:
-  cmp $0, %r12
+  cmp $0, %rcx
   je enter_end_\ind
   movq 16(%rax), %rax 
-  dec %r12
+  dec %rcx
   jmp enter_\ind
 enter_end_\ind:
-  movq %rax, %r12
+  movq %rax, %rcx
   movq 8(%rax), %rax
-  jmp *(%r12)
-entered_\ind:
-  cmp $0, %r12
-  je \ind
-  push %r12
-  push $0
-  jmp \ind
+  jmp *(%rcx)
+THUNK \ind
 .endm
 
+# Same as VAR, but also removes from heap. 
 .macro TAIL_VAR ind var
+entered_\ind:
 \ind:
-  mov $\var, %r12
+  mov $\var, %rcx
 enter_\ind:
-  cmp $0, %r12
+  cmp $0, %rcx
   je enter_end_\ind
   movq 16(%rax), %rax 
-  dec %r12
+  dec %rcx
   jmp enter_\ind
 enter_end_\ind:
   movq (%rax), %r13
   movq %rbx, (%rax) # frees the heap
   movq %rax, %rbx
   movq 8(%rax), %rax
-  movq $0, %r12
+  movq $0, %rcx
   jmp *%r13
 .endm
 
+# Values check to see if there is an update marker on top of the stack, and if
+# so, update the appropriate location with themselves.
 .macro VALUE ind val
 \ind:
   cmp %rsp, %rbp
@@ -105,14 +110,15 @@ enter_end_\ind:
 update_\ind:
   cmpq $0, (%rsp)
   jne apply_\ind
-  movq 8(%rsp), %r12
-  movq $\ind, (%r12)
-  movq %rax, 8(%r12)
+  movq 8(%rsp), %rcx
+  movq $\ind, (%rcx)
+  movq %rax, 8(%rcx)
   add $16, %rsp
   jmp \ind # TODO: remove if collapsed markers
 apply_\ind:
 .endm
 
+# Enters the closure on top of the stack with itself in its place
 .macro LIT ind
 entered_\ind:
 \ind:
@@ -121,20 +127,42 @@ entered_\ind:
   pop %r13
   push %rax
   push $entered_\ind 
-  mov $0, %r12
+  mov $0, %rcx
   mov %r13, %rax
   jmp *%r11
 .endm
 
+# Enters the closure on top of the stack with itself in its place
+.macro WORLD ind
+entered_\ind:
+\ind:
+  VALUE val_\ind $0
+  pop %r11
+  pop %r13
+  push %rax
+  push $entered_\ind
+  movq $0, %rcx
+  movq %r13, %rax
+  jmp *%r11
+.endm
+
 # Loads variables into registers for syscalls, calls, and primops. Note that by
-# making syscalls and calls have varargs, we have implicitly required that the
-# number of args is checked at runtime. An eventual optimization (and the
-# general use case) will be solving for this before compilation to native code. 
+# making syscalls and calls that have varargs, we have implicitly required that
+# the number of args is checked at runtime. An eventual optimization (and the
+# general use case) will be solving for this before compilation to native code.
 # We also free the heap space on loadvar.
-.macro LOADVAR reg
+.macro LOADVARENV reg
   movq %rbx, (%rax)
   movq %rax, %rbx
   movq 8(%rax), \reg
+  movq 16(%rax), %rax 
+.endm 
+
+.macro LOADVAR reg1 reg2
+  movq (%rax), \reg1
+  movq %rbx, (%rax)
+  movq %rax, %rbx
+  movq 8(%rax), \reg2
   movq 16(%rax), %rax 
 .endm 
 
@@ -183,19 +211,23 @@ entered_\ind:
 
 .macro BINOP ind
 entered_\ind:
-  mov 8(%rsp), %rsi
-  mov 24(%rsp), %rdi
-  add $32, %rsp
+  LOADVARENV %rsi
+  LOADVARENV %rdi
 .endm
 
 .macro BINBOOL ind cmp
 \ind:
   BINOP \ind
+  LOADVAR %r9 %r10
+  LOADVAR %r11 %r13
+  movq $0, %rcx
   cmp %rsi, %rdi
   \cmp true_\ind
-  FALSE \ind
+  movq %r10, %rax
+  jmp *%r9
 true_\ind:
-  TRUE \ind
+  movq %r13, %rax
+  jmp *%r11
 .endm
 
 .macro OP_EQ ind
@@ -222,127 +254,39 @@ true_\ind:
   BINBOOL \ind jge
 .endm
 
-.macro TRUE ind
-  LAM lamtrue1_\ind
-  UNUSED_LAM lamtrue2_\ind
-  TAIL_VAR vartrue_\ind 0
-.endm
-
-.macro FALSE ind
-  UNUSED_LAM lamfalse1_\ind
-  LAM lamfalse2_\ind
-  TAIL_VAR varfalse_\ind 0
-.endm
-
-.macro OP_SYSCALL ind
-\ind:
-  movq 8(%rax), %rax 
-  syscall
-  LIT syscall_lit_\ind
-.endm
-
-.macro OP_WRITEq ind
+.macro OP_WRITE reg ind 
 entered_\ind:
 \ind:
-  LAM write_val_\ind
-  LAM write_loc_\ind
+  movq 16(%rax), %rax  #World
+  LOADVARENV %rsi
+  LOADVARENV %rdi
+  mov %\reg, (%rsi)
+  RETURNVAL ret_\ind
+.endm
+
+.macro OP_READ reg ind
+entered_\ind:
+\ind:
+  movq 16(%rax), %rax #World
+  LOADVARENV %rsi
   movq $0, %rdi
-  LOADVAR %rdi
-  movq $0, %rsi
-  LOADVAR %rsi
-  movq %rdi, (%rsi)
-  addq $16, %rsp
-  movq -8(%rsp), %rax
-  movq $0, %r12
-  jmp *-16(%rsp)
+  mov (%rsi), %\reg
+  RETURNVAL ret_\ind
 .endm
 
-.macro OP_WRITEl ind
+.macro RETURNVAL ind
 entered_\ind:
 \ind:
-  LAM write_val_\ind
-  LAM write_loc_\ind
-  movq $0, %rdi
-  LOADVAR %rdi
-  movq $0, %rsi
-  LOADVAR %rsi
-  movl %edi, (%rsi)
-  addq $16, %rsp
-  movq -8(%rsp), %rax
-  movq $0, %r12
-  jmp *-16(%rsp)
-.endm
-
-.macro OP_WRITEs ind
-entered_\ind:
-\ind:
-  LAM write_val_\ind
-  LAM write_loc_\ind
-  movq $0, %rdi
-  LOADVAR %rdi
-  movq $0, %rsi
-  LOADVAR %rsi
-  mov %di, (%rsi)
-  addq $16, %rsp
-  movq -8(%rsp), %rax
-  movq $0, %r12
-  jmp *-16(%rsp)
-.endm
-
-.macro OP_WRITEb ind
-entered_\ind:
-\ind:
-  LAM write_val_\ind
-  LAM write_loc_\ind
-  movq $0, %rdi
-  LOADVAR %rdi
-  movq $0, %rsi
-  LOADVAR %rsi
-  movb %dil, (%rsi)
-  addq $16, %rsp
-  movq -8(%rsp), %rax
-  movq $0, %r12
-  jmp *-16(%rsp)
-.endm
-
-.macro OP_READq ind
-entered_\ind:
-\ind:
-  LAM read_val_\ind
-  LOADVAR %rdi
-  movq $0, %rax
-  mov (%rdi), %rax
-  LIT read_lit_\ind
-.endm
-
-.macro OP_READl ind
-entered_\ind:
-\ind:
-  LAM read_val_\ind
-  LOADVAR %rdi
-  movq $0, %rax
-  mov (%rdi), %eax
-  LIT read_lit_\ind
-.endm
-
-.macro OP_READs ind
-entered_\ind:
-\ind:
-  LAM read_val_\ind
-  LOADVAR %rdi
-  movq $0, %rax
-  mov (%rdi), %ax
-  LIT read_lit_\ind
-.endm
-
-.macro OP_READb ind
-entered_\ind:
-\ind:
-  LAM read_val_\ind
-  LOADVAR %rdi
-  movq $0, %rax
-  mov (%rdi), %al
-  LIT read_lit_\ind
+  pop %r9
+  pop %rax
+  push $0
+  push $world_\ind
+  push %rdi
+  push $lit_\ind
+  movq $0, %rcx
+  jmp *%r9
+  WORLD world_\ind
+  LIT lit_\ind
 .endm
 
 .text
@@ -383,14 +327,16 @@ _start:
   call alloc_heap 
   movq %rsp, %rbp
 # Push the argc and argv onto the stack
-  addq $24, %rbp
-  pushq %rbp
-  pushq $envp
-  subq $16, %rbp
-  pushq %rbp
-  pushq $argv
-  subq $8, %rbp
-  pushq (%rbp)
-  pushq $argc
   movq $0, %rax # set initial environment to null
+  movq $0, %rcx # set initial environment to null
+  
+#  addq $24, %rbp
+#  pushq %rbp
+#  pushq $envp
+#  subq $16, %rbp
+#  pushq %rbp
+#  pushq $argv
+#  subq $8, %rbp
+#  pushq (%rbp)
+#  pushq $argc
 

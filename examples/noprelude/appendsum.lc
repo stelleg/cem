@@ -1,0 +1,9 @@
++ = \n.\m.[m n \n.\m._+]
+nil = \n.\c.n
+cons = \h.\t.\n.\c.(c h t)
+Y = \g.(\x.[g x x] \x.[g x x])
+foldr = (Y \foldr.\f.\a.\bs.(bs a \b.\bs.(f b (foldr f a bs))))
+append = \as.\bs.(foldr cons bs as)
+sum = (foldr + 0)
+sys_exit = \code.\w.[w 60 code \a.\t.\w._!1]
+main = (sys_exit (sum (append "hello" " world")))

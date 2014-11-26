@@ -7,7 +7,15 @@ import qualified Data.Set as S
 type DBExpr = Expr () Int
 type SExpr = Expr String String
 
+isval :: Expr a b -> Bool
+isval e = case e of 
+  Lit i -> True
+  Lam _ _ -> True
+  World -> True
+  _ -> False
+
 data Expr a b = Var b 
+              | Tail b
               | App (Expr a b) (Expr a b) 
               | Lam a (Expr a b)
               | Lit Literal
@@ -42,3 +50,4 @@ deBruijn ls (Lam x t)   = Lam () <$> deBruijn ((x,0):map (fmap succ) ls) t
 deBruijn ls (App t1 t2) = App <$> (deBruijn ls t1) <*> (deBruijn ls t2)
 deBruijn ls (Lit l)     = Right $ Lit l
 deBruijn ls (Op o)      = Right $ Op o
+deBruijn ls World   = Right $ World

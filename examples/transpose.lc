@@ -1,0 +1,3 @@
+transpose = (foldr (zipWith :) (repeat ;))
+
+main = (interact \in.[unlines (map unwords) transpose (map words) lines in])

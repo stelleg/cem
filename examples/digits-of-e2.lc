@@ -14,4 +14,5 @@ e = [(map head)
      [iterate [compose carryPropagate 2] [compose map * 10] tail]
      (cons 2) repeat 1]
      
-main = [putStrLn (take 10) (concatMap showInt) e]
+main = (>>= getArgs \args.{n = [readInt head args]}
+  [putStrLn (take n) (concatMap showInt) e])

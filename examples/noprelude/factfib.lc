@@ -1,5 +1,23 @@
-Y=\g.(\x.[g x x] \x.[g x x])
-fib=(Y \fib.\m.(m (3 <) m [(fib [m 1 -]) (fib [m 2 -]) +]))
-fact=(Y \fact.\n.(n (2 <) n [n (fact [n 1 -]) *]))
+# Recursion!
+Y = \g.(\x.[g x x] \x.[g x x])
 
-main = [(fib 4) (fact 5) +]
+# Boolean integer comparisons
+= = \n.\m.\t.\f.[m n \n.\m._=]
+!= = \n.\m.\t.\f.[m n \n.\m._\=]
+>= = \n.\m.\t.\f.[m n \n.\m._>=]
+<= = \n.\m.\t.\f.[m n \n.\m._<=]
+< = \n.\m.\t.\f.[m n \n.\m._<]
+> = \n.\m.\t.\f.[m n \n.\m._>]
+
+# Arithmetic
++ = \n.\m.[m n \n.\m._+]
+- = \n.\m.[m n \n.\m._-]
+-' = (0 -)
+* = \n.\m.[m n \n.\m._*]
+/ = \n.\m.[m n \n.\m._/]
+% = \n.\m.[m n \n.\m._%]
+
+fib = (Y \fib.\m.(m < 3 m (fib (m - 1) + (fib (m - 2)))))
+fact = (Y \fact.\n.(n < 2 n (fact (n - 1) * n)))
+
+main = \w.\p.(fib 4 + (fact 5))

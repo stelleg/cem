@@ -1,11 +1,13 @@
 all: cem
 
+cabalflags=
+
 cem: *.hs
-	cabal configure 
-	cabal build
+	cabal configure $(cabalflags)
+	cabal build 
 
 install: 
-	cabal install
+	cabal install $(cabalflags) 
 
 clean: 
 	rm -rf dist
