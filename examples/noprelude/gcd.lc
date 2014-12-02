@@ -1,4 +1,6 @@
+% = \a.\b.[b a \a.\b._%] 
+= = \a.\b.\t.\f.[b a \a.\b._=]
 Y = \g.(\x.[g x x] \x.[g x x])
-gcd = (Y \gcd.\a.\b.([b 0 \a.\b._=] a (gcd b [b a \a.\b._%])))
+gcd = (Y \gcd.\a.\b.(b = 0 a (gcd b (% a b))))
 
 main = \w.\p.(gcd 25 10)

@@ -1,5 +1,8 @@
+{-#LANGUAGE OverloadedStrings#-}
+
 module Analysis where
 import GHC.TypeLits
+import Data.Text.Lazy (pack)
 import qualified LC
 import qualified Data.Map as M
 import qualified Data.Set as S
@@ -10,23 +13,25 @@ import Control.Monad.State
 import Control.Applicative ((<$>), (<*>))
 import IO
 import qualified Data.GraphViz as GV
-import VM (LExpr (..), returnval, isValue, getLabel)
+import VM (LExpr (..), returnval, isValue, getLabel, showGraph, process)
 import Data.Array
 import Data.List (sortBy)
+import Data.GraphViz.Types.Monadic
+import Data.GraphViz.Attributes.Complete hiding (Lt, label, Label)
+import Data.GraphViz.Attributes
+import Data.GraphViz.Commands
 
 -- Types
 data Closure = Closure {term :: LExpr, env :: [Binding]} deriving (Eq, Ord)
-
-instance Show Closure where
-  show (Closure t e) = "<" ++ show t ++ " | " ++ show e ++ ">"
 type Var = String
 type Label = Int
 type Binding = (String, Closure)
-
 type Analysis = M.Map LExpr
-
 type ClosureAnalysis = M.Map Closure (S.Set Closure) 
 type CFA = (S.Set Closure, ClosureAnalysis)
+
+instance Show Closure where
+  show (Closure t e) = "<" ++ show t ++ " | " ++ show e ++ ">"
 
 restrict :: Int -> Closure -> Closure
 restrict 0 (Closure t e) = Closure t []
@@ -68,11 +73,19 @@ sizes ca = sortBy (\(a,b) (c,d) -> compare b d) $ M.toList $ foldr f M.empty $ M
           [] -> ((1,S.size $ fjlu c ca), (0,0))
           env -> ((0,0), (1,S.size $ fjlu c ca))
 
-ca :: Int -> LExpr -> ClosureAnalysis
-ca dep e = findFixed M.empty where
-  findFixed :: ClosureAnalysis -> ClosureAnalysis
-  findFixed mu = trace (show $ size mu) $ trace' ("ca: " ++ ppca mu) $ if size mu == size mu' 
-    then mu 
+graphCFA :: ClosureAnalysis -> IO ()
+graphCFA cfa = showGraph "cfa.dot" dot where 
+  dot = digraph (Str "CFA") $ do
+    graphAttrs [textLabel "CFA"]
+    let nodes = M.toList cfa 
+    sequence [node (getLabel $ term c) [shape Record, textLabel (pack$process$take 15$show$term c)] | (c, cs) <- nodes]
+    sequence [edge (getLabel $ term c) (getLabel $ term c') [] | (c,cs) <- nodes, c' <- S.toList cs] 
+
+ca :: (ClosureAnalysis -> IO ()) -> Int -> LExpr -> IO ClosureAnalysis
+ca tr dep e = findFixed M.empty where
+  findFixed :: ClosureAnalysis -> IO ClosureAnalysis
+  findFixed mu = tr mu >> if size mu == size mu' 
+    then return mu 
     else findFixed mu' 
     where (_, mu') = eval (e `close` []) (S.empty, mu)
   eval :: Closure -> CFA -> CFA
@@ -98,21 +111,27 @@ ca dep e = findFixed M.empty where
       LC.Syscall n -> next (ch,mu) c $ S.singleton (returnval l `Closure` [])
       LC.Write w -> next (ch,mu) c $ S.singleton (returnval l `Closure` [])
       LC.Read w -> next (ch,mu) c $ S.singleton (returnval l `Closure` [])
-      LC.Add -> lit
-      LC.Sub -> lit    
-      LC.Mul -> lit
-      LC.Div -> lit
-      LC.Mod -> lit
-      LC.Le -> bool
-      LC.Ge -> bool 
-      LC.Lt -> bool 
-      LC.Gt -> bool 
-      LC.Eq -> bool 
-      LC.Neq -> bool 
-      where lit = next (ch,mu) c $ S.singleton (Lit (l+1) Nothing `Closure` [])
-            bool = next (ch,mu) c $ case env c of 
-              [a,b,(_,ct),(_,cf)] -> S.fromList [ct, cf]
-              _ -> fjlu (term c `close` []) mu
+      LC.Add -> lit (+)
+      LC.Sub -> lit (-)
+      LC.Mul -> lit (*)
+      LC.Div -> lit div
+      LC.Mod -> lit mod
+      LC.Le -> bool (<=)
+      LC.Ge -> bool (>=)
+      LC.Lt -> bool (<)
+      LC.Gt -> bool (>)
+      LC.Eq -> bool (==)
+      LC.Neq -> bool (/=)
+      where lit op = next (ch,mu) c $ case env c of
+              [a,b] -> S.singleton $ Closure (Lit (l+1) Nothing) []
+              [(_, Closure (Lit _ b) _), (_, Closure (Lit _ a) _)] -> S.singleton $ Closure (Lit (l+1) $ op <$> a <*> b) []
+              _ -> trace "Warning: possible type error on primop" $ S.singleton $ Closure (Lit (l+1) Nothing) []
+            bool op = next (ch,mu) c $ case env c of 
+              [b,a,(_,cf),(_,ct)] -> S.fromList [ct,cf]
+              [(_, Closure (Lit _ b) _), (_, Closure (Lit _ a) _), (_,cf),(_,ct)] -> case op <$> a <*> b of 
+                Nothing -> S.fromList [ct, cf]
+                Just b -> S.singleton $ if b then ct else cf
+              _ -> trace "Warning: possible type error on primop" $ fjlu (term c `close` []) mu
     _ -> next (ch,mu) c $ S.singleton c
     where next (ch,mu) c s = S.foldr eval (S.insert c ch, M.insert c s mu) s
           islit c = case term c of World _ -> True; Lit _ _ -> True; _ -> False

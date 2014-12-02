@@ -1,1 +1,1 @@
-main = (printf "%d, %d" (10 - 3) (10 - 3))
+main = (printf "%d, %d" (10 - 3) (3 - 10))

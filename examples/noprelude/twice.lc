@@ -1,0 +1,6 @@
++ = \m.\n.[m n \m.\n._+]
+twice = \f.\x.[f f x]
+n1 = (twice (+ 1) 1)
+n2 = (twice (+ 2) 2)
+sys_exit = \code.\w.[w 60 code \a.\t.\w._!1]
+main = (sys_exit (+ n1 n2))

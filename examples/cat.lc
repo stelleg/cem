@@ -1,1 +1,4 @@
-main = (>>= getContents putStr)
+main = (>>= getArgs \args.
+  (nil? args
+    (>>= getContents putStr)
+    (mapm \file.(>>= (readFile file) print) args)))

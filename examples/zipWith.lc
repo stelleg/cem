@@ -1,2 +1,2 @@
 nums = (zipWith * (range 10 20) (iterate (* 2) 1))
-main = (for nums (∘ print showInt))
+main = (for nums (printf "%d"))

@@ -1,12 +1,14 @@
 = = \a.\b.\t.\f.[b a \m.\n._=]
 - = \a.\b.[b a \m.\n._-]
-fst = \f.\s.f
-snd = \f.\s.s
+true = \t.\f.t
+false = \t.\f.f
+fst = true
+snd = false
 Y = \g.(\x.[g x x] \x.[g x x])
 f = (Y \f.(\odd.\even.\p.(p
-    \n.(= n 0 \t.\f.f (even (n - 1)))
-    \n.(= n 0 \t.\f.t (odd (n - 1)))) (f fst) (f snd)))
+  \n.(= n 0 false (even (n - 1)))
+  \n.(= n 0 true (odd (n - 1)))) 
+    (f fst) (f snd)))
 odd = (f fst)
-even = (f snd)
 
 main = \w.\p.(odd 6 1 2)

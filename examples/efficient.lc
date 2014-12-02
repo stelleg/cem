@@ -2,4 +2,9 @@ f = \v.\w.\x.\y.\z.(pair (w + x + y + z + 3) (v 0 \h.\t.h))
 big = (Y \big.\n.(n < 1 nil (cons n (big (n - 1)))))
 loop = (Y \loop.\n.\res.(n < 1 res (loop (n - 1) (cons (f (big n) 0 0 0 0) res))))
 
-main = (mapm \p.(p (printf "%d, %d")) (loop 10000 nil))
+iter = \x.\p.\f.{h = (Y \h.\a.\r.(p a r a (h (f a) a)))}
+  (h x 1)
+
+main = (for (range 1 1000) \i.
+  (mapm \p.(p (printf "%d, %d")) (loop i nil)))
+

@@ -86,9 +86,9 @@ cfas s = do
   return states
 
 cfak i s = do
-  let prog = VM.relabeled $ U.opt $ VM.labeled $ IO.parseProgram s
+  let prog = VM.relabeled $ VM.labeled $ IO.parseProgram s
   putStrLn $ VM.showlabeled prog
-  let cfa = A.ca i prog
+  cfa <- A.ca A.graphCFA i prog
   let progvals = A.ca' cfa prog
   putStrLn $ "Program values: " ++ A.ppset progvals
   putStrLn "State transitions"

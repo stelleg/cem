@@ -1,0 +1,6 @@
+< = \n.\m.\t.\f.[m n \n.\m._<]
+> = \n.\m.\t.\f.[m n \n.\m._>]
+false = \t.\f.f
+and = \a.\b.(a b false)
+
+main = \w.\p.(and (3 < 4) (3 > 1) 1 0)

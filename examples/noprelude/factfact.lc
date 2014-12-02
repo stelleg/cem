@@ -1,0 +1,23 @@
+# Recursion!
+Y = \g.(\x.[g x x] \x.[g x x])
+
+# Boolean integer comparisons
+= = \n.\m.\t.\f.[m n \n.\m._=]
+!= = \n.\m.\t.\f.[m n \n.\m._\=]
+>= = \n.\m.\t.\f.[m n \n.\m._>=]
+<= = \n.\m.\t.\f.[m n \n.\m._<=]
+< = \n.\m.\t.\f.[m n \n.\m._<]
+> = \n.\m.\t.\f.[m n \n.\m._>]
+
+# Arithmetic
++ = \n.\m.[m n \n.\m._+]
+- = \n.\m.[m n \n.\m._-]
+-' = (0 -)
+* = \n.\m.[m n \n.\m._*]
+/ = \n.\m.[m n \n.\m._/]
+% = \n.\m.[m n \n.\m._%]
+
+fact2 = (Y \fact2.\acc.\n.(n < 2 acc (fact2 (n * acc) (n - 1))) 1)
+fact1 = (Y \fact1.\acc.\n.(n < 2 acc (fact1 (n * acc) (n - 1))) 1)
+
+main = \w.\p.(fact1 3 + (fact2 3))
