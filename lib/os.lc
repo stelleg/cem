@@ -120,12 +120,12 @@ listIndex = (Y \listIndex.\n.\l.(l (error "listIndex failed") \h.\t.(n = 0 h (li
 fst = (index 2 1)
 snd = (index 2 2)
 sprintf_ = \k.(Y \printf.\acc.\l.(l (k acc) \h.\t.(h = '%'
-  (t (error "misformed format") \h.\t'.[
+  (t (append acc "%") \h.\t'.[
     (h = 'd' \i.(printf (append acc (showInt i)) t'))
     (h = 'c' \c.(printf (append acc (cons c nil)) t'))
     (h = 's' \s.(printf (append acc s) t'))
     (h = 'b' \b.(printf (append acc (showBool b)) t'))
-    (error "misformed format")])
+    (printf acc t)])
   (printf (append acc (cons h nil)) t))) nil)
 sprintf = (sprintf_ id)
 printf = (sprintf_ print)

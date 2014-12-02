@@ -33,3 +33,5 @@ deadCodeElim e = case e of
 
 opt :: LExpr -> LExpr
 opt = inline . deadCodeElim
+
+-- lifts every let binding to right below its lowest binding variable.
