@@ -18,6 +18,7 @@ import Data.GraphViz.Types.Monadic
 import Data.GraphViz.Attributes.Complete hiding (Lt, label, Label)
 import Data.GraphViz.Attributes
 import Data.GraphViz.Commands
+import Data.GraphViz (DotGraph)
 import Data.Text.Lazy (pack)
 
 type Env = Int
@@ -32,7 +33,16 @@ data LExpr = Var Label String
            | Lit Label (Maybe LC.Literal)
            | Op  Label LC.Op
            | World Label
-  deriving (Eq, Ord)
+
+instance Eq LExpr where
+  e1 == e2 = getLabel e1 == getLabel e2
+  Lit l e == Lit l' e' = l == l' && e == e'
+
+instance Ord LExpr where
+  e1 `compare` e2 = getLabel e1 `compare` getLabel e2
+  Lit l e `compare` Lit l' e' = case l `compare` l' 
+    of EQ -> e `compare` e'
+       ord -> ord
 
 type Label = Int
 

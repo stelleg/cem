@@ -1,0 +1,7 @@
+- = \n.\m.[m n \n.\m._-]
+-' = (0 -)
+sys_mmap = \addr.\len.\prot.\flags.\fd.\offset.\w.[w 9 offset fd flags prot len addr \a.\b.\c.\d.\e.\f.\t.\w._!6]
+malloc = \len.(sys_mmap 0 len 255 34 (-' 1) 0)
+!= = \n.\m.\t.\f.[m n \n.\m._\=]
+
+main = \w.\p.(malloc 10 w \v.\w.(v != 0 255 0))

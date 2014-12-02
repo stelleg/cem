@@ -1,0 +1,7 @@
+parse-opt-report = \input.
+  {l = (lines input)
+   w = (map words l)
+   num = \c.(and (c >= '0') (c <= '9'))
+   counts = (map \l.(readInt (filter num (head l))) w)}
+  (sprintf "%d\n" (sum counts))
+main = (interact parse-opt-report)

@@ -1,9 +1,10 @@
-fork = \child.(>>= sys_fork \i.(i = 0 (>> child (sys_exit 0)) (return id)))
+fork = \child.(>>= sys_fork \i.(i = 0 (>> child (sys_exit 0)) (return i)))
 child = (print "Im a child")
 grandchild = (>> (sleep 1 0) (print "Im a sleepy grandchild, whats going on"))
 
 main = 
   (>> (print "Parent thread begins")
-  (>> (fork (>> child 
-            (fork grandchild)))
-  (print "Oh god, the parent outlasted the child!")))
+  (>>= (fork (>> child grandchild)) \tid.
+  (>> (print "Parent waiting for descendents") 
+  (>> (sys_wait tid)
+  (print "Everyone said their part")))))

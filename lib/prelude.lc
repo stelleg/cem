@@ -129,7 +129,8 @@ zipWith = \f.(Y \zipWith.\as.\bs.(as nil \a.\at.(bs nil \b.\bt.
   (: (f a b) (zipWith at bt)))))
 zip = (zipWith pair)
 for = \as.\f.(Y \for.\as.(as (return id) \a.\as.(>> (f a) (for as))) as)
-mapm = (flip for)
+mapm_ = (flip for)
+mapm = \f.\as.(Y \mapm.\as.\acc.(as (return acc) \a.\as.(>>= (f a) \c.(mapm as (cons c acc)))) as nil)
 replace = \l.\v.(map (const v) l)
 zip-with-default = \f.\d.(Y \zwd.\as.\bs.(as 
   (replace bs d)

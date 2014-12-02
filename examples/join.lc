@@ -1,0 +1,9 @@
+fork = \child.(>>= sys_fork \i.(i = 0 (>> child (sys_exit 0)) (return i)))
+
+main = 
+  (>> (print "Forking children")
+  (>>= (mapm \i.(fork (>> (sleep i 0) (printf "Hello from thread %d" i)))  (range 1 10)) \tids.
+  (>> (printf "Waiting for children")
+  (>> (mapm sys_wait tids)
+  (print "Children done")))))
+

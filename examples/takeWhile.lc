@@ -1,2 +1,2 @@
 main = (>>= getContents 
-       (∘ putStr (takeWhile \c.(and (c > 'a') (c < 'z')))))
+       (∘ putStr (takeWhile \c.(and (c >= 'a') (c <= 'z')))))

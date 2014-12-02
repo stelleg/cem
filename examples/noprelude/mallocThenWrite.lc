@@ -1,0 +1,13 @@
+- = \n.\m.[m n \n.\m._-]
+-' = (0 -)
+mvq = \val.\addr.\w.[w addr val \a.\b.\w._@q]
+rdq = \addr.\w.[w addr \a.\w._$q]
+sys_mmap = \addr.\len.\prot.\flags.\fd.\offset.\w.[w 9 offset fd flags prot len addr \a.\b.\c.\d.\e.\f.\t.\w._!6]
+malloc = \len.(sys_mmap 0 len 255 34 (-' 1) 0)
+
+>>= = \c.\f.\w.(c w f)
+>> = \c.\f.\w.(c w \v.f)
+
+main = \w.\p.(>>= (malloc 10) \addr.
+             (>> (mvq 10 addr) 
+             (rdq addr)) w \v.\w.v)

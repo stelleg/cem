@@ -1,0 +1,7 @@
+Y = \g.(\x.[g x x] \z.[g z z])
+< = \n.\m.\t.\f.[m n \n.\m._<]
+- = \n.\m.[m n \n.\m._-]
+
+rec = (Y \rec.\n.(n < 1 0 (rec (n - 1))))
+
+main = \w.\p.(rec 5)

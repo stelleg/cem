@@ -1,5 +1,5 @@
 substring = (Y \ss.\w.\s.(w true \wh.\wt.(s false \sh.\st.
   (or (ss w st)
-      (and [wh sh =] (ss wt st))))))
+      (and (wh = sh) (ss wt st))))))
 
 main = [putStrLn showBool (substring "fig" "this fickle fig")]

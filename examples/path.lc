@@ -1,0 +1,4 @@
+main = (>>= getEnv \p.
+  (lookup "PATH" strcmp p 
+    (print "couldnt find path variable")
+    \s.(mapm print (splitWhen (= ':') s))))

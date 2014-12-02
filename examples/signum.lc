@@ -1,1 +1,1 @@
-main = [putStrLn showInt signum 10]
+main = (printf "signum %d = %d" 10 (signum 10))
