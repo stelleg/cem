@@ -125,7 +125,7 @@ sprintf_ = \k.(Y \printf.\acc.\l.(l (k acc) \h.\t.(h = '%'
     (h = 'c' \c.(printf (append acc (cons c nil)) t'))
     (h = 's' \s.(printf (append acc s) t'))
     (h = 'b' \b.(printf (append acc (showBool b)) t'))
-    (printf acc t)])
+    (printf (append acc "%") t)])
   (printf (append acc (cons h nil)) t))) nil)
 sprintf = (sprintf_ id)
 printf = (sprintf_ print)
