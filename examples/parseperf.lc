@@ -3,5 +3,5 @@ parse-opt-report = \input.
    w = (map words l)
    num = \c.(and (c >= '0') (c <= '9'))
    counts = (map \l.(readInt (filter num (head l))) w)}
-  (sprintf "%d\n" (sum counts))
+  (sprintf "%d.%d%\n" (sum counts / 100) (sum counts % 100))
 main = (interact parse-opt-report)

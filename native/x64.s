@@ -298,7 +298,7 @@ LIT argc
 
 alloc_heap:
   movq $0, %rdi
-  movq $4000000000, %rsi
+  movq $40000000, %rsi
   movq $255, %rdx
   movq $0x22, %r10
   movq $-1, %r8
