@@ -1,0 +1,1 @@
+main = (>>= getArgs (mapm_ \arg.(>> (printf "Running %s" arg) (system arg))))

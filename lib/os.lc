@@ -135,16 +135,23 @@ putWords = (Y \putWords.\ws.\startloc.(ws
     (>>= (putStrBuf pageSize startloc (++ w (: 0 ;))) \p.(p \endloc.\str.
     (>>= (putWords ws endloc) \p.(p \ptrloc.\ws.
     (return (pair ptrloc (cons startloc ws)))))))))
-exec = \str.(words str (return 0) \fname.\argv.
-  (>>= newPage \buf.
-  (>>= (putStrBuf pageSize buf fname) \p.(p \l.\str.
-  (>>= (putWords argv l) \p.(p \al.\alocs.
-  (>>= (putPtrBuf al (cons buf alocs)) \l.
-  (sys_execve buf al al))))))))
-
 getArgs = (>>= sys_getpid \i.{fname = (sprintf "/proc/%d/cmdline" i)}
   (>>= (readFile fname) \s.[return tail [splitWhen = 0] s]))
-
 getEnv = (>>= sys_getpid \i.{fname = (sprintf "/proc/%d/environ" i)}
   (>>= (readFile fname) \s.{bindings = (splitWhen (= 0) s)}
   (return (map (split (= '=')) bindings))))
+getRawEnv = (>>= sys_getpid \i.{fname = (sprintf "/proc/%d/environ" i)}
+  (>>= (readFile fname) \s.{bindings = (splitWhen (= 0) s)}
+  (return bindings)))
+exec = \str.(words str (return 0) \fname.\argv.
+  (>>= (malloc 8092000) \buf.
+  (>>= (putStrBuf pageSize buf fname) \p.(p \l.\str.
+  (>>= (putWords argv l) \p.(p \al.\alocs.
+  (>>= (putPtrBuf al (cons buf alocs)) \l.
+  (>>= getRawEnv \env.
+  (>>= (putWords env l) \p.(p \el.\elocs.
+  (>>= (putPtrBuf el (cons al elocs)) \l.
+  (>>= (sys_execve buf al el) \retval.
+  (>> (free buf)
+  (return retval))))))))))))))
+system = \str.(fork (exec str))

@@ -1,6 +1,6 @@
-parse-opt-report = \input.
+main = (>>= getContents \input.
   {l = (lines input)
    w = (map words l)
    num = \c.(and (c >= '0') (c <= '9'))
    counts = (sum (map \l.(readInt (filter num (head l))) w))}
-  (sprintf "%d.%d%\n" (counts / 100) (counts % 100))
+  (sprintf "%d.%d%\n" (counts / 100) (counts % 100)))
