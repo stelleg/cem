@@ -105,7 +105,6 @@ getContents = (readFd 0)
 getLine = (>>= getContents \s.(return (takeWhile (!= '\n') s)))
 interact = \f.(>>= getContents (∘ putStr f))
 
-
 # Prelude-like utilities that require IO, e.g. partial functions
 fork = \c.(>>= sys_fork \n.(n = 0 (>> c (sys_exit 0)) (sys_wait n)))
 error = \s.(>> (putStrLn s) (sys_exit 1) Ω)
@@ -144,14 +143,14 @@ getRawEnv = (>>= sys_getpid \i.{fname = (sprintf "/proc/%d/environ" i)}
   (>>= (readFile fname) \s.{bindings = (splitWhen (= 0) s)}
   (return bindings)))
 exec = \str.(words str (return 0) \fname.\argv.
-  (>>= (malloc 8092000) \buf.
-  (>>= (putStrBuf pageSize buf fname) \p.(p \l.\str.
+  (>>= newPage \buf.
+  (>>= (putStrBuf pageSize buf (++ fname (: 0 ;))) \p.(p \l.\str.
   (>>= (putWords argv l) \p.(p \al.\alocs.
   (>>= (putPtrBuf al (cons buf alocs)) \l.
   (>>= getRawEnv \env.
   (>>= (putWords env l) \p.(p \el.\elocs.
-  (>>= (putPtrBuf el (cons al elocs)) \l.
+  (>>= (putPtrBuf el elocs) \l.
   (>>= (sys_execve buf al el) \retval.
   (>> (free buf)
   (return retval))))))))))))))
-system = \str.(fork (exec str))
+system = (∘ fork exec)
