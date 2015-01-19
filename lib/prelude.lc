@@ -143,6 +143,7 @@ lookup = \elem.\eqfun.(Y \lookup.\l.(l
   \h.\t.(h \key.\value.(eqfun elem key
     (Just value)
     (lookup t)))))
+elem = \val.\list.(lookup val list false true)
 
 # Fun unicode synonyms
 ∘ = compose

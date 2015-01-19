@@ -23,7 +23,8 @@ sys_fork = \world.[world 57 \t.\w._!0]
 sys_nanosleep = \rqtp.\rmtp.\w.[w 35 rmtp rqtp \a.\b.\t.\w._!2]
 sys_munmap = \addr.\len.\w.[w 11 len addr \a.\b.\t.\w._!2]
 sys_wait = \pid.\w.[w 61 0 0 pid \pid.\a.\b.\t.\w._!3]
-sys_execve = \fname.\argv.\envp.\w.[w 59 envp argv fname \a.\b.\c.\w.\t._!3]
+sys_execve = \fname.\argv.\envp.\w.[w 59 envp argv fname \a.\b.\c.\t.\w._!3]
+sys_getdents = \fd.\dirent*.\count.\w.[w 78 count dirent* fd \a.\b.\c.\t.\w._!3]
 
 ## Basic IO ##
 pageSize = 4096
@@ -53,6 +54,11 @@ readStrBuf = (Y \rstr.\loc.\n.(n = 0
   (return nil)
   (>>= (read-utf8-char-from-buf loc) \p.(p \c.\n'.
   (>>= (rstr (loc + n') (n - n')) \s.(return (: c s)))))))
+readStrBuf' = (Y \rstr.\loc.
+  (>>= (read-utf8-char-from-buf loc) \p.(p \c.\n'.
+  (c = 0
+  (return nil)
+  (>>= (rstr (loc + n')) \s.(return (: c s)))))))
 putStrBuf = \size.\buf.{
   putStrBuf = (Y \putStrBuf.\loc.\s.
   {finished = (return (pair loc s))}
