@@ -34,7 +34,9 @@ instance Show Closure where
   show (Closure t e) = "<" ++ show t ++ " | " ++ show e ++ ">"
 
 restrict :: Int -> Closure -> Closure
-restrict 0 (Closure t e) = Closure t []
+restrict 0 (Closure t e) = (if length e > 0 
+  then {-trace ("Restricting!:" ++ show (Closure t e)) -} id
+  else id) Closure t []
 restrict i (Closure t e) = Closure t [(v, restrict (i-1) c) | (v,c) <- e]
 
 -- Binds lambda to its variables

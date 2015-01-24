@@ -142,6 +142,7 @@ charLit = Lit . fromEnum <$> (noneOf "\\\'\"" <|>
                       'n'  -> '\n'
                       '\'' -> '\''
                       '\"' -> '\"'
+                      '\\' -> '\\'
                       _ -> error $ "Couldn't handle special char: " ++ [c]
 
 -- Assembly                      

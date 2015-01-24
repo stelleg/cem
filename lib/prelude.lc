@@ -42,6 +42,8 @@ nil? = \l.(l true \h.\t.false)
 
 # Tuple
 pair = \f.\s.\p.(p f s)
+fst = \p.(p \x.\y.x)
+snd = \p.(p \x.\y.y)
 
 # Monad
 >>= = \c.\f.\w.(c w f)
@@ -72,7 +74,7 @@ concat = (foldr append nil)
 concatMap = \f.(foldr (compose append f) nil)
 filter = \c.(Y \filter.\ls.(ls nil \h.\t.(c h (cons h) id (filter t))))
 scanl = (Y \scanl.\f.\q.\ls.(cons q (ls nil \x.\xs.(scanl f (f q x) xs))))
-scanr = (Y \scanr.\f.\q.\ls.(cons q (ls (cons q nil) \x.\xs.(scanr f x q nil \q.\qs.(cons (f x q))))))
+scanr = (Y \scanr.\f.\q.\ls.(ls (cons q nil) \x.\xs.(scanr f x q nil \q.\qs.(cons (f x q)))))
 iterate = (Y \iterate.\f.\x.(cons x (iterate f (f x))))
 repeat = (iterate id)
 take = (Y \take.\n.\xs.(xs ; \x.\xs.(n <= 0 ; (: x (take (n - 1) xs)))))
@@ -111,6 +113,8 @@ splitWhen = \f.(Y \splitWhen.\xs.(split f xs \l.\r.(r
   \h.\t.{cont = (splitWhen r)}(l cont \h.\t.(: l cont)))))
 words = (splitWhen isSpace)
 lines = (splitWhen (= '\n'))
+splitArgs = (map (map fst) (splitWhen \p.(p \e.\c.(and (not e) (c = ' '))) 
+  (drop 1 (scanl \q.\x.(q \p.\c.(c = '\\' (pair true x) (pair false x))) (pair false ' ')))))
 intersperse = \v.(Y \intersperse.\l.(l l \h.\t.(t l 
   \h'.\t'.[(: h) (: v) intersperse t])))
 unwords = (compose concat (intersperse " "))
@@ -143,7 +147,7 @@ lookup = \elem.\eqfun.(Y \lookup.\l.(l
   \h.\t.(h \key.\value.(eqfun elem key
     (Just value)
     (lookup t)))))
-elem = \val.\list.(lookup val list false true)
+elem = \val.\func.\list.(lookup val func list false true)
 
 # Fun unicode synonyms
 ∘ = compose

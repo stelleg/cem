@@ -148,9 +148,48 @@ getEnv = (>>= sys_getpid \i.{fname = (sprintf "/proc/%d/environ" i)}
 getRawEnv = (>>= sys_getpid \i.{fname = (sprintf "/proc/%d/environ" i)}
   (>>= (readFile fname) \s.{bindings = (splitWhen (= 0) s)}
   (return bindings)))
-exec = \str.(words str (return 0) \fname.\argv.
+# LS 
+d_ino = \ld.(rdl ld)
+d_off = \ld.(rdl (ld + 8))
+d_reclen = \ld.(rds (ld + 16))
+d_name = \ld.(ld + 18)
+
+# String → IO [String]
+ls = \path.(>>= newPage \buf.
+  (>> (putStrBuf pageSize buf path) 
+  (>>= (sys_open buf 0x10000 0) \fd.
+  (fd < 0 
+    (>> (printf "%s is not a directory" path)
+    (return nil))
+  (>>= (sys_getdents fd buf pageSize) \n.
+  (n < 0 
+    (>> (printf "getdents on directory \"%s\" failed with errno %d" path n)
+    (return nil))
+  {read-dent = (Y \rdd.\ld.(ld - n >= buf
+      (return nil)
+    (>>= (d_ino ld) \ino.
+    (>>= (d_off ld) \off.
+    (>>= (d_reclen ld) \reclen.
+    (>>= (readStrBuf' (d_name ld)) \name.
+    (>>= (rdd (ld + reclen)) \names.
+    (return (cons name names)))))))))
+  }
+  (>>= (read-dent buf) \files.
+  (>> (free buf)
+  (return files)))))))))
+pwd = (>>= getEnv \env.(lookup "PWD" strcmp env (return "/") return))
+findPath = \name.(>>= getEnv \env.
+  {paths = (lookup "PATH" strcmp env (cons "/usr/bin" nil) (splitWhen (= ':')))}
+  {find-file = (Y \ff.\paths.(paths (>> (printf "couldn\'t find %s" name) (return name)) \p.\ps.(>> (printf "checking %s")
+    (>>= (ls p) \fs.(elem name strcmp fs (>> (printf "found %s in %s" name p) (return (append p (cons '/' name)))) (>> (printf "couldn\'t find %s in %s" name p) (ff ps)))))))}
+  (find-file paths))
+exec = \str.(splitArgs str (return 0) \fname.\argv.
+  (>>= getEnv \env.
+  (>> (printf "running %s with args: " fname)
+  (>> (mapm_ putStr argv) (>> (print ".")
+  (>>= (elem '/' = fname (return fname) (findPath fname)) \fullname.
   (>>= newPage \buf.
-  (>>= (putStrBuf pageSize buf (++ fname (: 0 ;))) \p.(p \l.\str.
+  (>>= (putStrBuf pageSize buf (++ fullname (: 0 ;))) \p.(p \l.\str.
   (>>= (putWords argv l) \p.(p \al.\alocs.
   (>>= (putPtrBuf al (cons buf alocs)) \l.
   (>>= getRawEnv \env.
@@ -158,5 +197,6 @@ exec = \str.(words str (return 0) \fname.\argv.
   (>>= (putPtrBuf el elocs) \l.
   (>>= (sys_execve buf al el) \retval.
   (>> (free buf)
-  (return retval))))))))))))))
+  (return retval)))))))))))))))))))
 system = (∘ fork exec)
+

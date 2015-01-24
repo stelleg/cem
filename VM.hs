@@ -36,13 +36,13 @@ data LExpr = Var Label String
 
 instance Eq LExpr where
   e1 == e2 = getLabel e1 == getLabel e2
-  Lit l e == Lit l' e' = l == l' && e == e'
+--  Lit l e == Lit l' e' = l == l' && e == e'
 
 instance Ord LExpr where
   e1 `compare` e2 = getLabel e1 `compare` getLabel e2
-  Lit l e `compare` Lit l' e' = case l `compare` l' 
-    of EQ -> e `compare` e'
-       ord -> ord
+--  Lit l e `compare` Lit l' e' = case l `compare` l' 
+--    of EQ -> e `compare` e'
+--       ord -> ord
 
 type Label = Int
 

@@ -1,42 +1,7 @@
-# String → IO String
-d_ino = \ld.(rdl ld)
-d_off = \ld.(rdl (ld + 8))
-d_reclen = \ld.(rds (ld + 16))
-d_name = \ld.(ld + 18)
-
-# String → IO [String]
-ls = \path.(>>= newPage \buf.
-  (>> (putStrBuf pageSize buf path) 
-  (>>= (sys_open buf 0x10000 0) \fd.
-  (fd < 0 
-    (>> (printf "%s is not a directory" path)
-    (return nil))
-  (>>= (sys_getdents fd buf pageSize) \n.
-  (n < 0 
-    (>> (printf "getdents on directory \"%s\" failed with errno %d" path n)
-    (return nil))
-  {read-dent = (Y \rdd.\ld.(ld - n >= buf
-      (return nil)
-    (>>= (d_ino ld) \ino.
-    (>>= (d_off ld) \off.
-    (>>= (d_reclen ld) \reclen.
-    (>>= (readStrBuf' (d_name ld)) \name.
-    (>>= (rdd (ld + reclen)) \names.
-    (return (cons name names)))))))))
-  }
-  (>>= (read-dent buf) \files.
-  (>> (free buf)
-  (return files)
-))))))))
-
-# IO [String]
-pwd = (>>= getEnv \env.
-  (return (lookup "PWD" strcmp env (error "where are you?") (splitWhen (= ':')))))
-
 # IO ()
 main = (>>= getArgs \args.
   (>>= (nil? args
-    pwd
+    (>>= pwd \pwd.(>> (print pwd) (return (cons pwd nil))))
     (return args)) \locs.
   (>>= (mapm ls locs) \allbins.
   (for (concat allbins) print))))
