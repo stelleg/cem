@@ -1,3 +1,3 @@
-main = (>>= getArgs \args.{power = [church readInt head args]}
+main = (>>= getArgs \args.{x = [church readInt head args]}
   [putStrLn showInt unchurch 
-    (sub (pow (church 3) power) (pow (church 3) power))])
+    (sub (pow x x) (pow x x))])

@@ -115,6 +115,7 @@ interact = \f.(>>= getContents (∘ putStr f))
 fork = \c.(>>= sys_fork \n.(n = 0 (>> c (sys_exit 0)) (sys_wait n)))
 error = \s.(>> (putStrLn s) (sys_exit 1) Ω)
 undefined = (error "undefined")
+⊥ = undefined
 PME = (error "Pattern match error")
 head = \l.(l (error "head of empty list") \h.\t.h)
 index = \n.\k.(Y \index.\n.\k.\cont.(n = 0
@@ -134,6 +135,7 @@ sprintf_ = \k.(Y \printf.\acc.\l.(l (k acc) \h.\t.(h = '%'
   (printf (append acc (cons h nil)) t))) nil)
 sprintf = (sprintf_ id)
 printf = (sprintf_ print)
+trace = \x.(sprintf_ print Ω \w.\s.x)
 putWords = (Y \putWords.\ws.\startloc.(ws
   (return (pair startloc nil))
   \w.\ws.

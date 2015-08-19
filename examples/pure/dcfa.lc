@@ -1,3 +1,4 @@
+{
 true = \t.\f.t
 false = \t.\f.f
 const = true
@@ -5,5 +6,6 @@ const = true
 f = \p.(p \b.\k.(b k (const b)))
 arg = (f (, false (const false)))
 res = (f (, true arg))
-main = \w.\p.(res w)
+}
+(res w)
 

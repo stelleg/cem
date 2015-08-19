@@ -1,4 +1,3 @@
-main = \w.\p.
 (\iszero.
   (\n.
     (iszero (n n))
