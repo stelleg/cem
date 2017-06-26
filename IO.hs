@@ -57,6 +57,24 @@ instance Show (DBExpr) where
   show (Op o) = show o
   show World = "Ω"
 
+data C = L | R | Z deriving (Eq)
+
+parensIf :: Bool -> String -> String
+parensIf True s = "(" ++ s ++ ")"
+parensIf False s = s
+
+class Pretty a where
+  pp :: a -> String
+
+instance Pretty DBExpr where
+  pp = pp' Z where
+    pp' c (Var s) = show s
+    pp' c (Lam s e) = parensIf (c==L) $ "\\lambda" ++ pp' Z e
+    pp' c (App e1 e2) = parensIf (c==R) $ pp' L e1 ++ "\\;" ++ pp' R e2 
+    pp' _ (Lit l) = show l
+    pp' _ (Op o) = show o
+    pp' _ World = "Ω"
+
 -- INPUT
 word :: Parser String
 word = (:) <$> satisfy (\c -> not (isSpace c || isDigit c || elem c "\'\"\\.#()[]{}_Ω"))

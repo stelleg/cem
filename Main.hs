@@ -18,6 +18,7 @@ import qualified ZFA as ZFA
 import qualified State as S
 import qualified Data.Set  as Set
 import qualified DBUtils as DBU
+import qualified CEM 
 
 libs = mapM getDataFileName ["lib/prelude.lc", "lib/os.lc", "lib/church.lc"]
 
@@ -48,6 +49,7 @@ parseOpts pure "g" sources = graph . programify pure =<< readSources sources
 parseOpts pure "r" sources = partial (\s->return()) . programify pure =<< readSources sources 
 parseOpts pure "t" sources = partial (\((c,e),h,s)->putStrLn $ take 30 $ show c) . programify pure =<< readSources sources
 parseOpts pure ('z':level) sources = cfaz (read level) . programify pure =<< readSources sources
+parseOpts pure ('x':level) sources = readSources sources >>= trace . programify pure
 parseOpts pure ('s':level) sources = readSources sources >>= case read level :: Int of
   1 -> \s -> (cfas s :: IO (S.AI 1)) >> return ()
   2 -> \s -> (cfas s :: IO (S.AI 2)) >> return ()
@@ -104,6 +106,10 @@ cfa s = do
   putStrLn $ AI.ppca $ cfa
   return (prog_vals, cfa)
 
+trace s = do
+  let prog = toDeBruijn $ IO.parseProgram s
+  CEM.trace prog
+  
 graph :: String -> IO ()
 graph s = do 
   ind <- newIORef 0

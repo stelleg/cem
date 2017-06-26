@@ -21,6 +21,7 @@ data Expr a b = Var b
               | Lit Literal
               | Op Op
               | World
+              deriving (Eq, Ord)
 
 travr :: (a -> State c (Expr a b)) 
       -> (b -> State c (Expr a b)) 

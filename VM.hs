@@ -82,13 +82,14 @@ showIndex :: Int -> String
 showIndex i = map (toEnum . (+ 8272) . fromEnum) $ show i 
 
 instance Show LExpr where
-  show e = case e of
-    Var l s -> s 
-    Lam l s e -> 'λ':s ++ '.':show e
-    App l m n -> '(':show m ++ " " ++ show n ++ ")"
-    Lit l i -> case i of Nothing -> "#"; Just i -> show i
-    Op l o -> show o 
-    World l -> "Ω"
+  show e = show' Z e where
+    show' p e = case e of
+      Var l s -> s 
+      Lam l s e -> parensIf (p==L) $ "λ" ++ s ++ '.':show' Z e
+      App l m n -> parensIf (p==R) $ show' L m ++ " " ++ show' R n
+      Lit l i -> case i of Nothing -> "#"; Just i -> show i
+      Op l o -> show o 
+      World l -> "Ω"
 
 showlabeled e = case e of
   Var l s -> s ++ showIndex l
@@ -196,7 +197,7 @@ traceCEM pp m = case m of
 
 instance Show StackElem where
     show (Closure (c,e)) = show c ++ "[" ++ show e ++ "]"
-    show (Update e) = show e ++ ":="
+    show (Update e) = show e
 
 showGraph fname dg = do
   runGraphviz dg DotOutput ("/tmp/" ++ fname)
