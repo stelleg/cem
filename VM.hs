@@ -11,7 +11,7 @@ import Data.Text.Lazy (pack)
 import Control.Monad.State
 import Control.Applicative
 import Syscall
-import Data.Storable
+import Foreign.Storable
 import Foreign.Ptr
 import Data.Word
 import Data.GraphViz.Types.Monadic
@@ -161,16 +161,16 @@ cem ((Op i o, e), h, cs) = (\(t, e', cs') -> ((t, e'), h, cs')) <$>
     LC.Syscall n -> (,e,cs) . pair' i (World i) . Lit i . Just <$> syscall n [i | (Lit _ (Just i), e) <- take (n+1) $ env']
       where (World _,_):env' = env e h
     LC.Write w -> case w of
-      LC.Word8 ->  pokeV (intPtrToPtr $ toEnum t) (toEnum t' :: Word8) >> return (pair' i (World i) (labeled lid), e, cs)
-      LC.Word16 ->  pokeV (intPtrToPtr $ toEnum t) (toEnum t' :: Word16) >> return (pair' i (World i) (labeled lid), e, cs)
-      LC.Word32 ->  pokeV (intPtrToPtr $ toEnum t) (toEnum t' :: Word32) >> return (pair' i (World i) (labeled lid), e, cs)
-      LC.Word64 -> pokeV (intPtrToPtr $ toEnum t) (toEnum t' :: Word64) >> return (pair' i (World i) (labeled lid), e, cs)
+      LC.Word8 ->  poke (intPtrToPtr $ toEnum t) (toEnum t' :: Word8) >> return (pair' i (World i) (labeled lid), e, cs)
+      LC.Word16 ->  poke (intPtrToPtr $ toEnum t) (toEnum t' :: Word16) >> return (pair' i (World i) (labeled lid), e, cs)
+      LC.Word32 ->  poke (intPtrToPtr $ toEnum t) (toEnum t' :: Word32) >> return (pair' i (World i) (labeled lid), e, cs)
+      LC.Word64 -> poke (intPtrToPtr $ toEnum t) (toEnum t' :: Word64) >> return (pair' i (World i) (labeled lid), e, cs)
       where (World _,_):(Lit _ (Just t), _):(Lit _ (Just t'), _):e' = env e h
     LC.Read w -> case w of
-      LC.Word8 -> (,e,cs) <$> (peekV (intPtrToPtr $ toEnum t) >>= return . pair' i (World i) . Lit i . Just . (fromEnum :: Word8 -> Int))
-      LC.Word16 -> (,e,cs) <$> (peekV (intPtrToPtr $ toEnum t) >>= return . pair' i (World i) . Lit i . Just . (fromEnum :: Word16 -> Int))
-      LC.Word32 -> (,e,cs) <$> (peekV (intPtrToPtr $ toEnum t) >>= return . pair' i (World i) . Lit i . Just . (fromEnum :: Word32 -> Int))
-      LC.Word64 -> (,e,cs) <$> (peekV (intPtrToPtr $ toEnum t) >>= return . pair' i (World i) . Lit i . Just . (fromEnum :: Word64 -> Int))
+      LC.Word8 -> (,e,cs) <$> (peek (intPtrToPtr $ toEnum t) >>= return . pair' i (World i) . Lit i . Just . (fromEnum :: Word8 -> Int))
+      LC.Word16 -> (,e,cs) <$> (peek (intPtrToPtr $ toEnum t) >>= return . pair' i (World i) . Lit i . Just . (fromEnum :: Word16 -> Int))
+      LC.Word32 -> (,e,cs) <$> (peek (intPtrToPtr $ toEnum t) >>= return . pair' i (World i) . Lit i . Just . (fromEnum :: Word32 -> Int))
+      LC.Word64 -> (,e,cs) <$> (peek (intPtrToPtr $ toEnum t) >>= return . pair' i (World i) . Lit i . Just . (fromEnum :: Word64 -> Int))
       where (World _,_):(Lit _ (Just t), _):e' = env e h
     a -> return $ case a of 
       LC.Add -> (,e,cs) <$> Lit i $ (+) <$> arg1 <*> arg2 where (Lit _ arg2, _):(Lit _ arg1, _):e' = env e h
