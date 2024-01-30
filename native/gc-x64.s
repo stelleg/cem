@@ -22,9 +22,9 @@ gc_stack:
   mov %rsp, %r10
 gc_stack_loop:
   add $16, %r10
-  cmp %r10, %rbp
+  cmpq %r10, %rbp
   jbe gc_stack_ret
-  cmp $0, (%r10) # Check if update
+  cmpq $0, (%r10) # Check if update
   je gc_stack_loop 
 # If we get here, it is a closure with an environment pointer.
   mov 8(%r10), %r8
@@ -89,9 +89,9 @@ gc_free_stack:
   mov %rsp, %r10
 gc_free_stack_loop:
   add $16, %r10
-  cmp %r10, %rbp
+  cmpq %r10, %rbp
   jbe gc_free_stack_ret
-  cmp $0, (%r10)
+  cmpq $0, (%r10)
   jne gc_free_stack_loop # Only continue if update marker
 gc_free_stack_update:
   mov 8(%r10), %r12 

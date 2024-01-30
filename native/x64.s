@@ -8,7 +8,7 @@
 
 .macro THUNK ind
 entered_\ind:
-  cmp $0, %rcx
+  cmpq $0, %rcx
   je \ind
   push %rcx
   push $0
@@ -41,7 +41,7 @@ entered_\ind:
 \ind:
 VALUE val_\ind $255
 noupdate_\ind:
-  cmp $0, %rbx
+  cmpq $0, %rbx
   jne apply_\ind
   call gc
 apply_\ind:
@@ -66,7 +66,7 @@ entered_\ind:
 \ind:
   mov $\var, %rcx
 enter_\ind:
-  cmp $0, %rcx
+  cmpq $0, %rcx
   je enter_end_\ind
   movq 16(%rax), %rax 
   dec %rcx
@@ -84,7 +84,7 @@ entered_\ind:
 \ind:
   mov $\var, %rcx
 enter_\ind:
-  cmp $0, %rcx
+  cmpq $0, %rcx
   je enter_end_\ind
   movq 16(%rax), %rax 
   dec %rcx
@@ -102,7 +102,7 @@ enter_end_\ind:
 # so, update the appropriate location with themselves.
 .macro VALUE ind val
 \ind:
-  cmp %rsp, %rbp
+  cmpq %rsp, %rbp
   jne update_\ind
   movq \val, %rdi
   movq $60, %rax
@@ -221,7 +221,7 @@ entered_\ind:
   LOADVAR %r9 %r10
   LOADVAR %r11 %r13
   movq $0, %rcx
-  cmp %rsi, %rdi
+  cmpq %rsi, %rdi
   \cmp true_\ind
   movq %r10, %rax
   jmp *%r9
@@ -314,7 +314,7 @@ alloc_heap:
   sub $64, %r15
 freeHeap_loop:
   add $24, %r13
-  cmp %r13, %r15
+  cmpq %r13, %r15
   jbe  alloc_heap_ret
   mov %r13, -24(%r13)
   jmp freeHeap_loop
