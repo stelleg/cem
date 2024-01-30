@@ -1,4 +1,4 @@
-sieve = \l.(l nil \h.\t.(cons h (filter \x.(x % h > 0) t)))
+sieve = (Y \sieve.\l.(l nil \h.\t.(cons h (filter \x.(x % h > 0) (sieve t)))))
 primes = (sieve (from 2))
 
-main = [putStrLn showInt head (drop 10 primes)]
+main = [[mapm (∘ putStrLn showInt)] (take 100) primes]
