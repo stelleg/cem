@@ -19,7 +19,7 @@ entered_\ind:
 .macro APP ind code
 \ind:
   push %rax
-  push $\code
+  pushq $\code
   jmp next_\ind
 THUNK \ind
 next_\ind:
@@ -126,7 +126,7 @@ entered_\ind:
   pop %r11
   pop %r13
   push %rax
-  push $entered_\ind 
+  pushq $entered_\ind 
   mov $0, %rcx
   mov %r13, %rax
   jmp *%r11
@@ -140,7 +140,7 @@ entered_\ind:
   pop %r11
   pop %r13
   push %rax
-  push $entered_\ind
+  pushq $entered_\ind
   movq $0, %rcx
   movq %r13, %rax
   jmp *%r11
@@ -280,9 +280,9 @@ entered_\ind:
   pop %r9
   pop %rax
   push $0
-  push $world_\ind
+  pushq $world_\ind
   push %rdi
-  push $lit_\ind
+  pushq $lit_\ind
   movq $0, %rcx
   jmp *%r9
   WORLD world_\ind
