@@ -1,6 +1,6 @@
 all: cem
 
-cabalflags=
+cabalflags=--overwrite-policy=always
 
 cem: *.hs
 	cabal configure $(cabalflags)
