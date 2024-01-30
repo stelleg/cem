@@ -1,4 +1,5 @@
-% Cactus Environment Machine
+Cactus Environment Machine
+==========================
 
 # Installing
     cabal install
